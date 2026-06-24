@@ -40,19 +40,22 @@ const entryPoints = [
 <BaseLayout title="GeorgiaScience.org">
   <section class="hero">
     <div class="wrap hero-inner">
-      <p class="eyebrow">Georgia Citizens for Integrity and Science Education</p>
-      <h1 class="hero-title">
-        Science makes more sense when we look at it together.
-      </h1>
-      <p class="hero-lede">
-        We are citizens, teachers, and scientists helping Georgians evaluate evidence,
-        reason carefully, and make informed decisions. Clear resources, honest sourcing,
-        and local science news, all in one place.
-      </p>
-      <div class="hero-actions">
-        <a class="btn btn-accent" href="/resources">Explore resources</a>
-        <a class="btn btn-ghost" href="/about">What we are about</a>
+      <div class="hero-text">
+        <p class="eyebrow">Georgia Citizens for Integrity and Science Education</p>
+        <h1 class="hero-title">
+          Science makes more sense when we look at it together.
+        </h1>
+        <p class="hero-lede">
+          We are citizens, teachers, and scientists helping Georgians evaluate evidence,
+          reason carefully, and make informed decisions. Clear resources, honest sourcing,
+          and local science news, all in one place.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-accent" href="/resources">Explore resources</a>
+          <a class="btn btn-ghost" href="/about">What we are about</a>
+        </div>
       </div>
+      <img src="/galogonew.png" alt="" class="hero-logo" />
     </div>
   </section>
 
@@ -115,7 +118,19 @@ const entryPoints = [
       background: radial-gradient(circle, rgba(244,179,44,0.22) 0%, transparent 62%);
       pointer-events: none;
     }
-    .hero-inner { position: relative; z-index: 1; }
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: clamp(1.5rem, 1rem + 4vw, 4rem);
+    }
+    .hero-text { flex: 1 1 0; min-width: 0; }
+    .hero-logo {
+      flex: 0 0 auto;
+      width: clamp(9rem, 6rem + 14vw, 16rem);
+      height: auto;
+    }
     .eyebrow {
       text-transform: uppercase;
       letter-spacing: 0.1em;
@@ -280,6 +295,11 @@ const entryPoints = [
       color: var(--ink-soft);
       line-height: 1.55;
       max-width: 70ch;
+    }
+
+    @media (max-width: 48rem) {
+      .hero-inner { flex-direction: column-reverse; align-items: flex-start; }
+      .hero-logo { width: clamp(8rem, 30vw, 12rem); }
     }
 
     @media (max-width: 34rem) {
