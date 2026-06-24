@@ -1,0 +1,88 @@
+{
+  "sections": [
+    {
+      "id": "national",
+      "title": "National organizations",
+      "blurb": "Reputable national science and science-education organizations, selected for relevance to Georgia audiences.",
+      "items": [
+        {
+          "name": "National Science Teaching Association (NSTA)",
+          "url": "https://www.nsta.org/",
+          "audience": "Educators",
+          "description": "Professional organization for science teachers, with classroom resources, standards guidance, and professional development.",
+          "rationale": "A primary national source for vetted, standards-aligned science teaching materials."
+        },
+        {
+          "name": "National Center for Science Education (NCSE)",
+          "url": "https://ncse.ngo/",
+          "audience": "Educators, communities",
+          "description": "Defends the integrity of science education, with resources on teaching evolution and climate change accurately.",
+          "rationale": "Directly supports integrity in how science is taught, a core part of our mission."
+        }
+      ]
+    },
+    {
+      "id": "georgia",
+      "title": "Georgia-specific resources",
+      "blurb": "State standards, institutions, programs, and initiatives based in Georgia.",
+      "items": [
+        {
+          "name": "Georgia Department of Education, Science",
+          "url": "https://www.georgiastandards.org/Georgia-Standards/Pages/Science.aspx",
+          "audience": "Educators, students",
+          "description": "Official Georgia Standards of Excellence for science, plus state curriculum guidance.",
+          "rationale": "The authoritative source for what Georgia students are expected to learn in science."
+        },
+        {
+          "name": "Georgia Science Teachers Association (GSTA)",
+          "url": "https://www.georgiascienceteacher.org/",
+          "audience": "Educators",
+          "description": "Statewide association supporting Georgia science teachers, with position statements and professional resources.",
+          "rationale": "A Georgia-based professional voice for rigorous, evidence-based science instruction."
+        }
+      ]
+    },
+    {
+      "id": "educators",
+      "title": "For educators",
+      "blurb": "Classroom materials and STEM teaching support.",
+      "items": [
+        {
+          "name": "NASA STEM Engagement",
+          "url": "https://www.nasa.gov/learning-resources/",
+          "audience": "Educators, students",
+          "description": "Free, standards-aligned STEM lessons, activities, and multimedia from NASA.",
+          "rationale": "High-quality, freely available classroom materials from a primary scientific institution."
+        }
+      ]
+    },
+    {
+      "id": "students",
+      "title": "For students",
+      "blurb": "Explainers, study help, and clarification resources.",
+      "items": [
+        {
+          "name": "Khan Academy, Science",
+          "url": "https://www.khanacademy.org/science",
+          "audience": "Students",
+          "description": "Free video lessons and practice across biology, chemistry, physics, and more.",
+          "rationale": "Widely used, free, and well-structured for self-paced study and clarification."
+        }
+      ]
+    },
+    {
+      "id": "critical-thinking",
+      "title": "Critical thinking and media literacy",
+      "blurb": "Resources for evaluating evidence and navigating information.",
+      "items": [
+        {
+          "name": "News Literacy Project",
+          "url": "https://newslit.org/",
+          "audience": "Students, educators, communities",
+          "description": "Nonpartisan tools and lessons for telling credible information from misinformation.",
+          "rationale": "Supports the evidence-evaluation skills at the heart of scientific literacy."
+        }
+      ]
+    }
+  ]
+}
