@@ -1,0 +1,121 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const allNews = (await getCollection('news')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+
+const categoryLabel = {
+  scholarship: 'Scholarship',
+  discovery: 'Discovery',
+  policy: 'Policy',
+  event: 'Event',
+  resource: 'Resource',
+};
+
+const filters = ['all', 'scholarship', 'discovery', 'policy', 'event', 'resource'];
+const filterLabel = { all: 'All', ...categoryLabel };
+
+const dateFmt = (d) =>
+  d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+---
+
+<BaseLayout
+  title="News — GeorgiaScience.org"
+  description="Local science news across Georgia: scholarships, discoveries, policy, and events affecting science education."
+>
+  <section class="wrap page-head">
+    <p class="eyebrow">Local science news</p>
+    <h1 class="page-title">Science news across Georgia</h1>
+    <p class="page-intro">
+      Scholarships, discoveries, policy, and events that shape science education and
+      literacy in Georgia. Each item is reported plainly and linked to its primary source.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <div class="filters" role="group" aria-label="Filter news by category">
+      {filters.map((f) => (
+        <button class="filter-btn" data-filter={f} aria-pressed={f === 'all' ? 'true' : 'false'}>
+          {filterLabel[f]}
+        </button>
+      ))}
+    </div>
+
+    {allNews.length === 0 ? (
+      <p class="empty">No news items yet. New items will appear here as they are added.</p>
+    ) : (
+      <ul class="news-list" id="news-list">
+        {allNews.map((item) => (
+          <li class="news-item" data-category={item.data.category}>
+            <a class="news-link" href={`/news/${item.slug}`}>
+              <span class={`tag tag-${item.data.category}`}>{categoryLabel[item.data.category]}</span>
+              <span class="news-title">{item.data.title}</span>
+              <span class="news-meta">
+                <time datetime={item.data.date.toISOString()}>{dateFmt(item.data.date)}</time>
+                {item.data.location && <span class="news-loc">{item.data.location}</span>}
+              </span>
+              <span class="news-summary">{item.data.summary}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+    <p class="empty hidden" id="no-match">No items in this category yet.</p>
+  </section>
+
+  <script is:inline>
+    const buttons = document.querySelectorAll('.filter-btn');
+    const items = document.querySelectorAll('#news-list .news-item');
+    const noMatch = document.getElementById('no-match');
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const filter = btn.getAttribute('data-filter');
+        buttons.forEach((b) => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
+        let visible = 0;
+        items.forEach((item) => {
+          const show = filter === 'all' || item.getAttribute('data-category') === filter;
+          item.style.display = show ? '' : 'none';
+          if (show) visible++;
+        });
+        if (noMatch) noMatch.classList.toggle('hidden', visible !== 0);
+      });
+    });
+  </script>
+
+  <style>
+    .page-head { padding-block: clamp(2.5rem, 2rem + 4vw, 4.5rem) 1.5rem; max-width: 60ch; }
+    .eyebrow { text-transform: uppercase; letter-spacing: 0.1em; font-size: var(--step--1); font-weight: 600; color: var(--deep); margin: 0 0 0.75rem; }
+    .page-title { font-family: var(--font-display); font-weight: 600; font-size: var(--step-3); line-height: 1.1; margin: 0 0 1rem; }
+    .page-intro { font-size: var(--step-1); color: var(--ink-soft); line-height: 1.55; margin: 0; }
+
+    .filters { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 2px solid var(--ink); }
+    .filter-btn { font-family: inherit; font-size: var(--step--1); font-weight: 600; padding: 0.45rem 1rem; border-radius: 999px; border: 1.5px solid var(--hairline); background: var(--surface); color: var(--ink-soft); cursor: pointer; transition: all 0.15s ease; }
+    .filter-btn:hover { border-color: var(--deep); color: var(--ink); }
+    .filter-btn[aria-pressed='true'] { background: var(--deep); border-color: var(--deep); color: var(--deep-ink); }
+
+    .news-list { list-style: none; margin: 0; padding: 0; }
+    .news-item { border-bottom: 1px solid var(--hairline); }
+    .news-link { display: grid; grid-template-columns: auto 1fr; grid-template-areas: 'tag title' 'tag meta' 'sum sum'; gap: 0.35rem 1rem; padding: 1.5rem 0; text-decoration: none; color: var(--ink); }
+    .news-link:hover .news-title { color: var(--deep); }
+
+    .tag { grid-area: tag; align-self: start; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.25rem 0.6rem; border-radius: 999px; white-space: nowrap; background: var(--accent-soft); color: var(--accent-ink); }
+    .tag-discovery { background: #d8efe9; color: #11505d; }
+    .tag-policy { background: #e7e2f6; color: #44347a; }
+    .tag-event { background: #fbe0d6; color: #8a3b1f; }
+    .tag-scholarship { background: var(--accent-soft); color: var(--accent-ink); }
+    .tag-resource { background: #e3eaee; color: #38505c; }
+
+    .news-title { grid-area: title; font-family: var(--font-display); font-weight: 600; font-size: var(--step-1); line-height: 1.25; }
+    .news-meta { grid-area: meta; font-size: var(--step--1); color: var(--ink-soft); display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .news-summary { grid-area: sum; font-size: var(--step-0); color: var(--ink-soft); line-height: 1.55; max-width: 72ch; }
+
+    .empty { color: var(--ink-soft); font-size: var(--step-0); padding: 2rem 0 4rem; }
+    .hidden { display: none; }
+
+    @media (max-width: 34rem) {
+      .news-link { grid-template-columns: 1fr; grid-template-areas: 'tag' 'title' 'meta' 'sum'; }
+    }
+  </style>
+</BaseLayout>
