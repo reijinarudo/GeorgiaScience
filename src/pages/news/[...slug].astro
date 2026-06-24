@@ -1,1 +1,77 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
 
+export async function getStaticPaths() {
+  const news = await getCollection('news');
+  return news.map((item) => ({
+    params: { slug: item.slug },
+    props: { item },
+  }));
+}
+
+const { item } = Astro.props;
+const { Content } = await item.render();
+
+const categoryLabel = {
+  scholarship: 'Scholarship',
+  discovery: 'Discovery',
+  policy: 'Policy',
+  event: 'Event',
+  resource: 'Resource',
+};
+
+const dateFmt = (d) =>
+  d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+---
+
+<BaseLayout title={`${item.data.title} — GeorgiaScience.org`} description={item.data.summary}>
+  <article class="wrap article">
+    <a class="back" href="/news">&larr; All news</a>
+
+    <div class="meta-top">
+      <span class={`tag tag-${item.data.category}`}>{categoryLabel[item.data.category]}</span>
+      <time datetime={item.data.date.toISOString()}>{dateFmt(item.data.date)}</time>
+      {item.data.location && <span class="loc">{item.data.location}</span>}
+    </div>
+
+    <h1 class="article-title">{item.data.title}</h1>
+    <p class="summary">{item.data.summary}</p>
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    <p class="source">
+      Source:{' '}
+      <a href={item.data.source} rel="noopener noreferrer" target="_blank">
+        {item.data.sourceName}
+      </a>
+    </p>
+  </article>
+
+  <style>
+    .article { max-width: 44rem; padding-block: clamp(2rem, 1.5rem + 3vw, 3.5rem) 4rem; }
+    .back { display: inline-block; font-weight: 600; color: var(--deep); text-decoration: none; margin-bottom: 2rem; }
+    .back:hover { text-decoration: underline; }
+
+    .meta-top { display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap; margin-bottom: 1rem; font-size: var(--step--1); color: var(--ink-soft); }
+    .tag { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.25rem 0.6rem; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); }
+    .tag-discovery { background: #d8efe9; color: #11505d; }
+    .tag-policy { background: #e7e2f6; color: #44347a; }
+    .tag-event { background: #fbe0d6; color: #8a3b1f; }
+    .tag-scholarship { background: var(--accent-soft); color: var(--accent-ink); }
+    .tag-resource { background: #e3eaee; color: #38505c; }
+
+    .article-title { font-family: var(--font-display); font-weight: 600; font-size: var(--step-3); line-height: 1.12; margin: 0 0 1rem; }
+    .summary { font-size: var(--step-1); color: var(--ink); line-height: 1.55; margin: 0 0 2rem; padding-left: 1.1rem; border-left: 3px solid var(--accent); }
+
+    .prose { font-size: var(--step-0); line-height: 1.7; color: var(--ink); }
+    .prose :global(p) { margin: 0 0 1.2rem; }
+    .prose :global(a) { color: var(--deep); text-decoration: underline; text-underline-offset: 2px; }
+    .prose :global(h2) { font-family: var(--font-display); font-size: var(--step-2); margin: 2rem 0 0.75rem; }
+
+    .source { margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--hairline); font-size: var(--step--1); color: var(--ink-soft); }
+    .source a { color: var(--deep); }
+  </style>
+</BaseLayout>
