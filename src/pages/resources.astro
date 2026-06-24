@@ -1,0 +1,108 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import resourceData from '../data/resources.json';
+
+const { sections } = resourceData;
+---
+
+<BaseLayout
+  title="Resources — GeorgiaScience.org"
+  description="Vetted science and science-education resources for Georgia students, educators, and communities."
+>
+  <section class="wrap page-head">
+    <p class="eyebrow">Resources</p>
+    <h1 class="page-title">Vetted resources for science and literacy in Georgia.</h1>
+    <p class="page-intro">
+      A curated, growing collection of reputable resources for students, educators, and
+      communities. Every entry is selected for quality and relevance, and noted with who
+      it is for and why it is included.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <nav class="jump" aria-label="Jump to a section">
+      {sections.map((s) => (
+        <a href={`#${s.id}`}>{s.title}</a>
+      ))}
+    </nav>
+  </section>
+
+  <section class="wrap content">
+    {sections.map((s) => (
+      <div class="res-section" id={s.id}>
+        <h2 class="res-section-title">{s.title}</h2>
+        <p class="res-section-blurb">{s.blurb}</p>
+        {s.items.length === 0 ? (
+          <p class="res-empty">More resources coming to this section.</p>
+        ) : (
+          <ul class="res-list">
+            {s.items.map((item) => (
+              <li class="res-card">
+                <div class="res-top">
+                  <h3 class="res-name">
+                    <a href={item.url} target="_blank" rel="noopener noreferrer">{item.name}</a>
+                  </h3>
+                  <span class="res-audience">{item.audience}</span>
+                </div>
+                <p class="res-desc">{item.description}</p>
+                <p class="res-why"><span>Why it is here:</span> {item.rationale}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    ))}
+  </section>
+</BaseLayout>
+
+<style>
+  .page-head { padding-block: clamp(1.75rem, 1.25rem + 2vw, 2.75rem) 1rem; }
+  .eyebrow { text-transform: uppercase; letter-spacing: 0.1em; font-size: var(--step--1); font-weight: 600; color: var(--deep); margin: 0 0 0.6rem; }
+  .page-title { font-family: var(--font-display); font-weight: 600; font-size: var(--step-3); line-height: 1.1; margin: 0 0 1rem; max-width: 20ch; }
+  .page-intro { font-size: var(--step-1); color: var(--ink-soft); line-height: 1.55; margin: 0; max-width: 60ch; }
+
+  .jump {
+    display: flex; flex-wrap: wrap; gap: 0.5rem;
+    padding: 1rem 0 1.5rem;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 0.5rem;
+  }
+  .jump a {
+    font-size: var(--step--1); font-weight: 600;
+    padding: 0.4rem 0.9rem; border-radius: 999px;
+    border: 1.5px solid var(--hairline); background: var(--surface);
+    color: var(--ink-soft); text-decoration: none; transition: all 0.15s ease;
+  }
+  .jump a:hover { border-color: var(--deep); color: var(--ink); }
+
+  .content { padding-bottom: 4rem; }
+  .res-section { padding-top: 2.25rem; scroll-margin-top: 1.5rem; }
+  .res-section-title {
+    font-family: var(--font-display); font-weight: 600; font-size: var(--step-2);
+    margin: 0 0 0.4rem; line-height: 1.15;
+  }
+  .res-section-blurb { font-size: var(--step-0); color: var(--ink-soft); margin: 0 0 1.25rem; max-width: 60ch; }
+
+  .res-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+  .res-card {
+    background: var(--surface); border: 1px solid var(--hairline);
+    border-radius: var(--radius); padding: 1.25rem 1.5rem;
+  }
+  .res-top { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .res-name {
+    font-family: var(--font-display); font-weight: 600; font-size: var(--step-1);
+    margin: 0; line-height: 1.2;
+  }
+  .res-name a { color: var(--ink); text-decoration: none; }
+  .res-name a:hover { color: var(--deep); text-decoration: underline; }
+  .res-audience {
+    font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--accent-ink); background: var(--accent-soft);
+    padding: 0.25rem 0.6rem; border-radius: 999px; white-space: nowrap;
+  }
+  .res-desc { font-size: var(--step-0); color: var(--ink); line-height: 1.55; margin: 0.6rem 0 0.5rem; }
+  .res-why { font-size: var(--step--1); color: var(--ink-soft); line-height: 1.5; margin: 0; }
+  .res-why span { font-weight: 700; color: var(--deep); }
+
+  .res-empty { font-size: var(--step-0); color: var(--ink-soft); font-style: italic; }
+</style>
