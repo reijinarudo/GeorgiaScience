@@ -84,7 +84,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .page-intro { font-size: var(--step-1); color: var(--ink-soft); line-height: 1.55; margin: 0; max-width: 58ch; }
 
   .content { padding-bottom: 4rem; }
-  .prose { max-width: 65ch; }
+  .prose { max-width: min(65ch, 100%); }
   .prose h2 {
     font-family: var(--font-display); font-weight: 600; font-size: var(--step-2);
     margin: 2.25rem 0 0.75rem; line-height: 1.15;
