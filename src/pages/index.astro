@@ -1,56 +1,303 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+// Pull the latest news from the content collection, newest first.
+const allNews = await getCollection('news');
+const latest = allNews
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 4);
+
+const categoryLabel = {
+  scholarship: 'Scholarship',
+  discovery: 'Discovery',
+  policy: 'Policy',
+  event: 'Event',
+  resource: 'Resource',
+};
+
+const dateFmt = (d) =>
+  d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+const entryPoints = [
+  {
+    href: '/resources',
+    title: 'Find resources',
+    body: 'Vetted materials for students, educators, and anyone who wants to understand the science behind the headlines.',
+  },
+  {
+    href: '/news',
+    title: 'Follow Georgia science',
+    body: 'Local scholarships, discoveries, and policy that shape science education across the state, reported plainly and sourced.',
+  },
+  {
+    href: '/get-involved',
+    title: 'Get involved',
+    body: 'Suggest a resource, share a news tip, or lend your time as an educator or scientist. This is a community effort.',
+  },
+];
 ---
 
 <BaseLayout title="GeorgiaScience.org">
+  <!-- Hero -->
   <section class="hero">
-    <div class="wrap">
+    <div class="wrap hero-inner">
       <p class="eyebrow">Georgia Citizens for Integrity and Science Education</p>
-      <h1>Advancing science education and scientific literacy across Georgia.</h1>
-      <p class="lede">
-        A hub for clear, evidence-based resources that help students, educators, and
-        communities evaluate evidence, reason carefully, and make informed decisions.
+      <h1 class="hero-title">
+        Science makes more sense when we look at it together.
+      </h1>
+      <p class="hero-lede">
+        We are citizens, teachers, and scientists helping Georgians evaluate evidence,
+        reason carefully, and make informed decisions. Clear resources, honest sourcing,
+        and local science news, all in one place.
       </p>
+      <div class="hero-actions">
+        <a class="btn btn-accent" href="/resources">Explore resources</a>
+        <a class="btn btn-ghost" href="/about">What we are about</a>
+      </div>
     </div>
   </section>
 
-  <section class="wrap intro">
-    <p>
-      This is the initial scaffold. The full home page, with the three entry points and
-      the latest news pulled from the content collection, is built in the next steps.
-      The site has been online since 2019; this is its content build-out.
+  <!-- Mission summary -->
+  <section class="wrap mission">
+    <p class="mission-text">
+      Scientific literacy, the ability to weigh evidence and decide for yourself, is what
+      we work toward. We get there by supporting science education that has integrity:
+      teaching that is accurate, current, and free from distortion. We try to practice
+      that same care here, citing sources and saying plainly what is known and what is not.
     </p>
   </section>
 
+  <!-- Three entry points -->
+  <section class="wrap entries" aria-label="Where to start">
+    <div class="entry-grid">
+      {entryPoints.map((e) => (
+        <a class="entry-card" href={e.href}>
+          <h2 class="entry-title">{e.title}</h2>
+          <p class="entry-body">{e.body}</p>
+          <span class="entry-go" aria-hidden="true">Go &rarr;</span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- Latest news -->
+  <section class="wrap news-latest" aria-label="Latest news">
+    <div class="news-head">
+      <h2 class="section-title">Latest from Georgia</h2>
+      <a class="news-all" href="/news">All news &rarr;</a>
+    </div>
+    <ul class="news-list">
+      {latest.map((item) => (
+        <li class="news-item">
+          <a class="news-link" href={`/news/${item.slug}`}>
+            <span class={`tag tag-${item.data.category}`}>{categoryLabel[item.data.category]}</span>
+            <span class="news-title">{item.data.title}</span>
+            <span class="news-meta">
+              <time datetime={item.data.date.toISOString()}>{dateFmt(item.data.date)}</time>
+              {item.data.location && <span class="news-loc">{item.data.location}</span>}
+            </span>
+            <span class="news-summary">{item.data.summary}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+
   <style>
+    /* ---------- Hero ---------- */
     .hero {
-      background: var(--deep);
+      background:
+        radial-gradient(120% 140% at 85% -10%, var(--deep-2) 0%, var(--deep) 55%);
       color: var(--deep-ink);
-      padding-block: clamp(3rem, 2rem + 6vw, 6rem);
+      padding-block: clamp(3.5rem, 2.5rem + 7vw, 7rem);
+      position: relative;
+      overflow: hidden;
     }
+    .hero::after {
+      /* warm amber glow, soft and human, the single bold accent moment */
+      content: '';
+      position: absolute;
+      width: 40rem; height: 40rem;
+      right: -12rem; top: -16rem;
+      background: radial-gradient(circle, rgba(244,179,44,0.22) 0%, transparent 62%);
+      pointer-events: none;
+    }
+    .hero-inner { position: relative; z-index: 1; }
     .eyebrow {
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.1em;
       font-size: var(--step--1);
-      color: var(--accent);
-      margin: 0 0 1rem;
       font-weight: 600;
-    }
-    .hero h1 {
-      font-size: var(--step-4);
-      max-width: 18ch;
+      color: var(--accent);
       margin: 0 0 1.25rem;
-      letter-spacing: -0.02em;
     }
-    .lede {
+    .hero-title {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: var(--step-4);
+      line-height: 1.05;
+      letter-spacing: -0.015em;
+      margin: 0 0 1.5rem;
+      max-width: 20ch;
+    }
+    .hero-lede {
       font-size: var(--step-1);
-      max-width: 48ch;
-      margin: 0;
-      opacity: 0.92;
+      line-height: 1.55;
+      max-width: 52ch;
+      margin: 0 0 2rem;
+      color: var(--deep-ink-soft);
     }
-    .intro {
-      padding-block: 3rem;
-      max-width: var(--measure);
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 0.85rem; }
+
+    .btn {
+      display: inline-block;
+      padding: 0.8rem 1.5rem;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: var(--step-0);
+      text-decoration: none;
+      transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+    .btn-accent { background: var(--accent); color: var(--accent-ink); }
+    .btn-accent:hover { transform: translateY(-2px); background: #ffc94d; }
+    .btn-ghost {
+      color: var(--deep-ink);
+      border: 1.5px solid rgba(238,246,244,0.35);
+    }
+    .btn-ghost:hover { border-color: var(--deep-ink); }
+
+    /* ---------- Mission ---------- */
+    .mission { padding-block: clamp(2.5rem, 2rem + 3vw, 4rem); max-width: 62ch; }
+    .mission-text {
+      font-size: var(--step-1);
+      line-height: 1.6;
+      color: var(--ink);
+      margin: 0;
+      padding-left: 1.25rem;
+      border-left: 3px solid var(--accent);
+    }
+
+    /* ---------- Entry points ---------- */
+    .entries { padding-bottom: clamp(2rem, 1.5rem + 2vw, 3.5rem); }
+    .entry-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+      gap: 1.25rem;
+    }
+    .entry-card {
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      text-decoration: none;
+      color: var(--ink);
+      transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .entry-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent);
+      box-shadow: 0 12px 28px -18px rgba(13,59,69,0.45);
+    }
+    .entry-title {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: var(--step-2);
+      margin: 0 0 0.6rem;
+      line-height: 1.15;
+    }
+    .entry-body {
+      font-size: var(--step-0);
+      color: var(--ink-soft);
+      line-height: 1.55;
+      margin: 0 0 1.25rem;
+      flex: 1;
+    }
+    .entry-go { font-weight: 600; color: var(--deep); }
+
+    /* ---------- Latest news ---------- */
+    .news-latest { padding-bottom: 4rem; }
+    .news-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      border-top: 2px solid var(--ink);
+      padding-top: 1rem;
+    }
+    .section-title {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: var(--step-2);
+      margin: 0;
+    }
+    .news-all { font-weight: 600; color: var(--deep); text-decoration: none; white-space: nowrap; }
+    .news-all:hover { text-decoration: underline; }
+
+    .news-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+    .news-item { border-bottom: 1px solid var(--hairline); }
+    .news-link {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      grid-template-areas:
+        'tag title'
+        'tag meta'
+        'sum sum';
+      gap: 0.35rem 1rem;
+      padding: 1.25rem 0;
+      text-decoration: none;
+      color: var(--ink);
+    }
+    .news-link:hover .news-title { color: var(--deep); }
+
+    .tag {
+      grid-area: tag;
+      align-self: start;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      white-space: nowrap;
+      background: var(--accent-soft);
+      color: var(--accent-ink);
+    }
+    .tag-discovery { background: #d8efe9; color: #11505d; }
+    .tag-policy { background: #e7e2f6; color: #44347a; }
+    .tag-event { background: #fbe0d6; color: #8a3b1f; }
+    .tag-scholarship { background: var(--accent-soft); color: var(--accent-ink); }
+    .tag-resource { background: #e3eaee; color: #38505c; }
+
+    .news-title {
+      grid-area: title;
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: var(--step-1);
+      line-height: 1.25;
+    }
+    .news-meta {
+      grid-area: meta;
+      font-size: var(--step--1);
+      color: var(--ink-soft);
+      display: flex; gap: 0.75rem; flex-wrap: wrap;
+    }
+    .news-summary {
+      grid-area: sum;
+      font-size: var(--step-0);
+      color: var(--ink-soft);
+      line-height: 1.55;
+      max-width: 70ch;
+    }
+
+    @media (max-width: 34rem) {
+      .news-link {
+        grid-template-columns: 1fr;
+        grid-template-areas: 'tag' 'title' 'meta' 'sum';
+      }
     }
   </style>
 </BaseLayout>
