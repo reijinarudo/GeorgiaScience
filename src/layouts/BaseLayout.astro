@@ -1,17 +1,14 @@
 ---
 // Base layout: header nav, footer with full org name, global styles.
 import '../styles/global.css';
-
 export interface Props {
   title?: string;
   description?: string;
 }
-
 const {
   title = 'GeorgiaScience.org',
   description = 'Advancing science education and scientific literacy across Georgia.',
 } = Astro.props;
-
 const nav = [
   { href: '/', label: 'Home' },
   { href: '/about', label: 'About' },
@@ -21,7 +18,6 @@ const nav = [
   { href: '/contact', label: 'Contact' },
 ];
 ---
-
 <!doctype html>
 <html lang="en">
   <head>
@@ -39,10 +35,12 @@ const nav = [
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
-
     <header class="site-header">
       <div class="wrap header-inner">
-        <a href="/" class="brand">GeorgiaScience<span class="brand-dot">.org</span></a>
+        <a href="/" class="brand">
+          <img src="/galogonew.png" alt="" class="brand-logo" width="36" height="36" />
+          <span>GeorgiaScience<span class="brand-dot">.org</span></span>
+        </a>
         <nav aria-label="Primary">
           <ul class="nav-list">
             {nav.map((item) => (
@@ -52,11 +50,9 @@ const nav = [
         </nav>
       </div>
     </header>
-
     <main id="main">
       <slot />
     </main>
-
     <footer class="site-footer">
       <div class="wrap">
         <p class="footer-org">Georgia Citizens for Integrity and Science Education</p>
@@ -70,7 +66,6 @@ const nav = [
         </ul>
       </div>
     </footer>
-
     <style>
       .skip-link {
         position: absolute;
@@ -82,7 +77,6 @@ const nav = [
         z-index: 100;
       }
       .skip-link:focus { left: 0; }
-
       .site-header {
         border-bottom: 1px solid var(--hairline);
         background: var(--surface);
@@ -100,9 +94,12 @@ const nav = [
         font-size: var(--step-1);
         text-decoration: none;
         letter-spacing: -0.01em;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
       }
+      .brand-logo { width: 36px; height: 36px; flex-shrink: 0; }
       .brand-dot { color: var(--accent); }
-
       .nav-list {
         display: flex;
         gap: 1.25rem;
@@ -118,7 +115,6 @@ const nav = [
         font-weight: 500;
       }
       .nav-list a:hover { color: var(--ink); }
-
       .site-footer {
         margin-top: 4rem;
         border-top: 1px solid var(--hairline);
