@@ -85,10 +85,10 @@ const dateFmt = (d) =>
   </script>
 
   <style>
-    .page-head { padding-block: clamp(1.75rem, 1.25rem + 2vw, 2.75rem) 1rem; max-width: 52ch; margin-inline: 0; }
+    .page-head { padding-block: clamp(1.75rem, 1.25rem + 2vw, 2.75rem) 1rem; }
     .eyebrow { text-transform: uppercase; letter-spacing: 0.1em; font-size: var(--step--1); font-weight: 600; color: var(--deep); margin: 0 0 0.6rem; }
     .page-title { font-family: var(--font-display); font-weight: 600; font-size: var(--step-2); line-height: 1.1; margin: 0 0 0.75rem; }
-    .page-intro { font-size: var(--step-0); color: var(--ink-soft); line-height: 1.55; margin: 0; }
+    .page-intro { font-size: var(--step-0); color: var(--ink-soft); line-height: 1.55; margin: 0; max-width: 52ch; }
 
     .filters { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 2px solid var(--ink); }
     .filter-btn { font-family: inherit; font-size: var(--step--1); font-weight: 600; padding: 0.45rem 1rem; border-radius: 999px; border: 1.5px solid var(--hairline); background: var(--surface); color: var(--ink-soft); cursor: pointer; transition: all 0.15s ease; }
