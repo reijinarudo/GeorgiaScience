@@ -1,0 +1,86 @@
+/*
+  GeorgiaScience.org design tokens.
+
+  Foundation: light and airy, high-contrast body text for readability.
+  Hero / accent: deep saturated field with one luminous accent, used sparingly.
+  These are a starting point and will be refined as we build the real pages.
+*/
+
+:root {
+  /* Foundation */
+  --bg: #fbfcfe;            /* near-white, faint cool cast */
+  --surface: #ffffff;
+  --ink: #11151c;          /* dark high-contrast body text */
+  --ink-soft: #41505f;     /* secondary text */
+  --hairline: #e2e8f0;     /* dividers, borders */
+
+  /* Hero / dark field */
+  --deep: #0a2540;         /* deep saturated blue for hero moments */
+  --deep-ink: #eaf2fb;     /* text on the deep field */
+
+  /* Luminous accent, used sparingly for energy */
+  --accent: #16d6c4;       /* luminous teal-cyan */
+  --accent-ink: #06302c;   /* text that sits on the accent */
+
+  /* Type scale */
+  --step--1: clamp(0.83rem, 0.8rem + 0.15vw, 0.92rem);
+  --step-0: clamp(1rem, 0.96rem + 0.2vw, 1.12rem);
+  --step-1: clamp(1.25rem, 1.16rem + 0.4vw, 1.5rem);
+  --step-2: clamp(1.6rem, 1.4rem + 0.9vw, 2.2rem);
+  --step-3: clamp(2.1rem, 1.7rem + 1.8vw, 3.2rem);
+  --step-4: clamp(2.6rem, 1.9rem + 3vw, 4.4rem);
+
+  /* Spacing and layout */
+  --measure: 68ch;         /* comfortable reading line length */
+  --gutter: clamp(1rem, 0.6rem + 2vw, 2.5rem);
+  --radius: 10px;
+
+  /* Fonts. System stack for now; real display/body pairing comes with the design pass. */
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-display: var(--font-body);
+}
+
+* { box-sizing: border-box; }
+
+html {
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--bg);
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+}
+
+body { margin: 0; font-size: var(--step-0); }
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  line-height: 1.15;
+  /* Sentence-case headings are a content rule, not enforced in CSS. */
+}
+
+a { color: inherit; }
+
+img { max-width: 100%; height: auto; display: block; }
+
+.wrap {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Respect reduced-motion preferences from the start. */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Visible keyboard focus. */
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}

@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="GeorgiaScience.org">
+  <section class="hero">
+    <div class="wrap">
+      <p class="eyebrow">Georgia Citizens for Integrity and Science Education</p>
+      <h1>Advancing science education and scientific literacy across Georgia.</h1>
+      <p class="lede">
+        A hub for clear, evidence-based resources that help students, educators, and
+        communities evaluate evidence, reason carefully, and make informed decisions.
+      </p>
+    </div>
+  </section>
+
+  <section class="wrap intro">
+    <p>
+      This is the initial scaffold. The full home page, with the three entry points and
+      the latest news pulled from the content collection, is built in the next steps.
+      The site has been online since 2019; this is its content build-out.
+    </p>
+  </section>
+
+  <style>
+    .hero {
+      background: var(--deep);
+      color: var(--deep-ink);
+      padding-block: clamp(3rem, 2rem + 6vw, 6rem);
+    }
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: var(--step--1);
+      color: var(--accent);
+      margin: 0 0 1rem;
+      font-weight: 600;
+    }
+    .hero h1 {
+      font-size: var(--step-4);
+      max-width: 18ch;
+      margin: 0 0 1.25rem;
+      letter-spacing: -0.02em;
+    }
+    .lede {
+      font-size: var(--step-1);
+      max-width: 48ch;
+      margin: 0;
+      opacity: 0.92;
+    }
+    .intro {
+      padding-block: 3rem;
+      max-width: var(--measure);
+    }
+  </style>
+</BaseLayout>
