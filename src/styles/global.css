@@ -1,29 +1,26 @@
 /*
   GeorgiaScience.org design tokens.
-
-  Foundation: light and airy, high-contrast body text for readability.
-  Hero / accent: deep saturated field with one luminous accent, used sparingly.
-  These are a starting point and will be refined as we build the real pages.
+  Foundation: light, airy, warm. Hero: deep warm teal. Accent: luminous amber.
 */
 
 :root {
   /* Foundation: light, airy, warm-neutral rather than cold white */
-  --bg: #fbf9f5;            /* warm near-white */
+  --bg: #fbf9f5;
   --surface: #ffffff;
-  --ink: #1a2024;          /* dark high-contrast body text */
-  --ink-soft: #51606a;     /* secondary text */
-  --hairline: #e7e2d8;     /* warm hairline dividers, borders */
+  --ink: #1a2024;
+  --ink-soft: #51606a;
+  --hairline: #e7e2d8;
 
-  /* Hero / deep field: warm teal, inviting rather than corporate navy */
-  --deep: #0d3b45;         /* deep warm teal */
-  --deep-2: #11505d;       /* lighter teal for gradient depth */
-  --deep-ink: #eef6f4;     /* text on the deep field */
-  --deep-ink-soft: #b9d4d2;/* secondary text on deep field */
+  /* Hero / deep field: warm teal */
+  --deep: #0d3b45;
+  --deep-2: #11505d;
+  --deep-ink: #eef6f4;
+  --deep-ink-soft: #b9d4d2;
 
-  /* Luminous accent: warm amber for energy and approachability */
-  --accent: #f4b32c;       /* warm luminous amber */
-  --accent-soft: #fce3a8;  /* pale amber for soft fills */
-  --accent-ink: #3a2a06;   /* text that sits on the accent */
+  /* Luminous accent: warm amber */
+  --accent: #f4b32c;
+  --accent-soft: #fce3a8;
+  --accent-ink: #3a2a06;
 
   /* Type scale */
   --step--1: clamp(0.83rem, 0.8rem + 0.15vw, 0.92rem);
@@ -34,11 +31,11 @@
   --step-4: clamp(2.6rem, 1.9rem + 3vw, 4.4rem);
 
   /* Spacing and layout */
-  --measure: 68ch;         /* comfortable reading line length */
+  --measure: 68ch;
   --gutter: clamp(1rem, 0.6rem + 2vw, 2.5rem);
   --radius: 10px;
 
-  /* Fonts: warm, approachable humanist sans for display and body. */
+  /* Fonts: warm, approachable humanist pairing */
   --font-body: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
 }
@@ -58,7 +55,6 @@ body { margin: 0; font-size: var(--step-0); }
 h1, h2, h3 {
   font-family: var(--font-display);
   line-height: 1.15;
-  /* Sentence-case headings are a content rule, not enforced in CSS. */
 }
 
 a { color: inherit; }
@@ -72,7 +68,6 @@ img { max-width: 100%; height: auto; display: block; }
   padding-inline: var(--gutter);
 }
 
-/* Respect reduced-motion preferences from the start. */
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
@@ -82,7 +77,6 @@ img { max-width: 100%; height: auto; display: block; }
   }
 }
 
-/* Visible keyboard focus. */
 :focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 2px;
