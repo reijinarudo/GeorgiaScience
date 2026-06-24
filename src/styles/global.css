@@ -7,20 +7,23 @@
 */
 
 :root {
-  /* Foundation */
-  --bg: #fbfcfe;            /* near-white, faint cool cast */
+  /* Foundation: light, airy, warm-neutral rather than cold white */
+  --bg: #fbf9f5;            /* warm near-white */
   --surface: #ffffff;
-  --ink: #11151c;          /* dark high-contrast body text */
-  --ink-soft: #41505f;     /* secondary text */
-  --hairline: #e2e8f0;     /* dividers, borders */
+  --ink: #1a2024;          /* dark high-contrast body text */
+  --ink-soft: #51606a;     /* secondary text */
+  --hairline: #e7e2d8;     /* warm hairline dividers, borders */
 
-  /* Hero / dark field */
-  --deep: #0a2540;         /* deep saturated blue for hero moments */
-  --deep-ink: #eaf2fb;     /* text on the deep field */
+  /* Hero / deep field: warm teal, inviting rather than corporate navy */
+  --deep: #0d3b45;         /* deep warm teal */
+  --deep-2: #11505d;       /* lighter teal for gradient depth */
+  --deep-ink: #eef6f4;     /* text on the deep field */
+  --deep-ink-soft: #b9d4d2;/* secondary text on deep field */
 
-  /* Luminous accent, used sparingly for energy */
-  --accent: #16d6c4;       /* luminous teal-cyan */
-  --accent-ink: #06302c;   /* text that sits on the accent */
+  /* Luminous accent: warm amber for energy and approachability */
+  --accent: #f4b32c;       /* warm luminous amber */
+  --accent-soft: #fce3a8;  /* pale amber for soft fills */
+  --accent-ink: #3a2a06;   /* text that sits on the accent */
 
   /* Type scale */
   --step--1: clamp(0.83rem, 0.8rem + 0.15vw, 0.92rem);
@@ -35,9 +38,9 @@
   --gutter: clamp(1rem, 0.6rem + 2vw, 2.5rem);
   --radius: 10px;
 
-  /* Fonts. System stack for now; real display/body pairing comes with the design pass. */
-  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-display: var(--font-body);
+  /* Fonts: warm, approachable humanist sans for display and body. */
+  --font-body: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
 }
 
 * { box-sizing: border-box; }
