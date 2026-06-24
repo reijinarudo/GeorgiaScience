@@ -1,0 +1,104 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="About — GeorgiaScience.org"
+  description="Who we are and what we work toward: strengthening scientific literacy across Georgia through science education that has integrity."
+>
+  <section class="wrap page-head">
+    <p class="eyebrow">About us</p>
+    <h1 class="page-title">Citizens, teachers, and scientists for a scientifically literate Georgia.</h1>
+    <p class="page-intro">
+      Georgia Citizens for Integrity and Science Education is a group of private citizens,
+      teachers, and scientists working to improve science literacy across the state.
+    </p>
+  </section>
+
+  <section class="wrap content">
+    <div class="prose">
+      <h2>What we are</h2>
+      <p>
+        GeorgiaScience.org is the organization's public hub for science education,
+        scientific literacy, and critical thinking. We provide clear, evidence-based
+        resources for students, educators, and communities who value reliable science
+        and informed decision making.
+      </p>
+
+      <h2>Our mission</h2>
+      <p>
+        Our mission is to strengthen scientific understanding, support high-quality STEM
+        education, and help Georgians engage thoughtfully with evidence and with the world
+        around them.
+      </p>
+      <p>
+        We are literacy-forward. Scientific literacy, the ability to evaluate evidence,
+        reason carefully, and make informed decisions, is the outcome we work toward.
+        Integrity in science education is one of the means by which that literacy is built.
+      </p>
+      <p>
+        By integrity in science education, we mean fidelity in how science is taught: that
+        what reaches students and the public is accurate, current, evidence-based, and free
+        from distortion. This is not about policing science. It is about teaching it well
+        and honestly, so that genuine understanding can follow. A scientifically literate
+        Georgia depends on science education that has integrity.
+      </p>
+
+      <h2>Who we serve</h2>
+      <ul>
+        <li>Students seeking clarification on scientific topics and reliable resources.</li>
+        <li>Educators looking for high-quality, vetted classroom materials and STEM support.</li>
+        <li>Communities and individuals who want trustworthy information, upcoming events, and ways to engage thoughtfully with science in Georgia.</li>
+      </ul>
+
+      <h2>What belongs here</h2>
+      <ul>
+        <li>Curated links to reputable national science and science-education organizations, selected for relevance to Georgia.</li>
+        <li>Georgia-specific resources: state standards, local institutions, programs, and initiatives.</li>
+        <li>Local science news: scholarships, discoveries, events, and policies affecting science education across Georgia.</li>
+        <li>Plain-language explainers and critical-thinking and media-literacy resources.</li>
+      </ul>
+
+      <h2>What does not</h2>
+      <ul>
+        <li>Partisan political advocacy unrelated to science education.</li>
+        <li>Unvetted or low-quality sources. Every linked resource should meet the same evidence and integrity standard we promote.</li>
+        <li>Content that overstates certainty or blurs evidence with speculation.</li>
+      </ul>
+
+      <div class="principle">
+        <p>
+          We try to practice the literacy we teach: verify claims, cite sources, state
+          uncertainty honestly, and distinguish evidence from interpretation. Our
+          credibility rests on holding ourselves to our own standards.
+        </p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .page-head { padding-block: clamp(1.75rem, 1.25rem + 2vw, 2.75rem) 1rem; }
+  .eyebrow { text-transform: uppercase; letter-spacing: 0.1em; font-size: var(--step--1); font-weight: 600; color: var(--deep); margin: 0 0 0.6rem; }
+  .page-title { font-family: var(--font-display); font-weight: 600; font-size: var(--step-3); line-height: 1.1; margin: 0 0 1rem; max-width: 22ch; }
+  .page-intro { font-size: var(--step-1); color: var(--ink-soft); line-height: 1.55; margin: 0; max-width: 58ch; }
+
+  .content { padding-bottom: 4rem; }
+  .prose { max-width: 65ch; }
+  .prose h2 {
+    font-family: var(--font-display); font-weight: 600; font-size: var(--step-2);
+    margin: 2.25rem 0 0.75rem; line-height: 1.15;
+  }
+  .prose p { font-size: var(--step-0); line-height: 1.7; color: var(--ink); margin: 0 0 1.1rem; }
+  .prose ul { margin: 0 0 1.1rem; padding-left: 1.25rem; }
+  .prose li { font-size: var(--step-0); line-height: 1.6; color: var(--ink); margin-bottom: 0.5rem; }
+
+  .principle {
+    margin-top: 2.5rem;
+    padding: 1.5rem 1.75rem;
+    background: var(--surface);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  .principle p { margin: 0; font-size: var(--step-1); line-height: 1.55; color: var(--ink); }
+</style>
