@@ -1,0 +1,121 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+// FORMSPREE SETUP:
+// 1. Create a free account at https://formspree.io
+// 2. Create a new form; set its destination to the email you want submissions sent to
+//    (your personal email works; you can change it to inquiry@georgiascience.org later
+//    in the Formspree dashboard without editing this file).
+// 3. Copy your form endpoint and replace the ID below.
+const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xqevedbe';
+---
+
+<BaseLayout
+  title="Contact — GeorgiaScience.org"
+  description="Get in touch with Georgia Citizens for Integrity and Science Education."
+>
+  <section class="wrap page-head">
+    <p class="eyebrow">Contact</p>
+    <h1 class="page-title">Get in touch.</h1>
+    <p class="page-intro">
+      Use the form for suggestions, questions, offers to contribute, or general
+      correspondence. We read everything and reply when a response is needed.
+    </p>
+  </section>
+
+  <section class="wrap content">
+    <div class="contact-grid">
+      <form class="form" action={FORMSPREE_ENDPOINT} method="POST">
+        <div class="field">
+          <label for="name">Name</label>
+          <input id="name" name="name" type="text" required autocomplete="name" />
+        </div>
+
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required autocomplete="email" />
+        </div>
+
+        <div class="field">
+          <label for="reason">Reason for contact</label>
+          <select id="reason" name="reason" required>
+            <option value="" disabled selected>Select one</option>
+            <option>Suggest a resource or news item</option>
+            <option>Offer to contribute or volunteer</option>
+            <option>General question</option>
+            <option>Correction or feedback</option>
+            <option>Press or media</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="message">Message</label>
+          <textarea id="message" name="message" rows="6" required></textarea>
+        </div>
+
+        <!-- Honeypot for basic spam protection -->
+        <div class="honeypot" aria-hidden="true">
+          <label>Leave blank: <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" /></label>
+        </div>
+
+        <button class="btn btn-accent" type="submit">Send message</button>
+
+        <p class="form-note">
+          By submitting, you consent to receive a reply at the email you provide. We do not
+          add you to any mailing list, and we collect only what is needed to respond.
+        </p>
+      </form>
+
+      <aside class="aside">
+        <h2 class="aside-title">Other ways to reach us</h2>
+        <p class="aside-line"><strong>Follow along</strong><br />
+          <a href="https://www.facebook.com/profile.php?id=100064733196969" target="_blank" rel="noopener noreferrer">Our Facebook page</a>
+        </p>
+        <p class="aside-line"><strong>Location</strong><br />Georgia, United States</p>
+        <p class="aside-note">
+          Suggestions are reviewed against the same evidence and integrity standard the site
+          promotes. Reputable sources and accurate framing help us act on them quickly.
+        </p>
+      </aside>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .page-head { padding-block: clamp(1.75rem, 1.25rem + 2vw, 2.75rem) 1rem; }
+  .eyebrow { text-transform: uppercase; letter-spacing: 0.1em; font-size: var(--step--1); font-weight: 600; color: var(--deep); margin: 0 0 0.6rem; }
+  .page-title { font-family: var(--font-display); font-weight: 600; font-size: var(--step-3); line-height: 1.1; margin: 0 0 1rem; }
+  .page-intro { font-size: var(--step-1); color: var(--ink-soft); line-height: 1.55; margin: 0; max-width: 56ch; }
+
+  .content { padding-block: 1.5rem 4rem; }
+  .contact-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 2.5rem; align-items: start; }
+
+  .form { display: grid; gap: 1.1rem; max-width: 38rem; }
+  .field { display: grid; gap: 0.35rem; }
+  label { font-weight: 600; font-size: var(--step--1); color: var(--ink); }
+  input, select, textarea {
+    font-family: inherit; font-size: var(--step-0);
+    padding: 0.65rem 0.8rem; border: 1.5px solid var(--hairline);
+    border-radius: 8px; background: var(--surface); color: var(--ink); width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent); outline-offset: 1px; border-color: var(--deep); }
+  textarea { resize: vertical; }
+  .honeypot { position: absolute; left: -9999px; }
+
+  .btn { display: inline-block; padding: 0.75rem 1.6rem; border-radius: 999px; font-weight: 600; font-size: var(--step-0); border: none; cursor: pointer; text-decoration: none; transition: transform 0.15s ease, background-color 0.15s ease; justify-self: start; }
+  .btn-accent { background: var(--accent); color: var(--accent-ink); }
+  .btn-accent:hover { transform: translateY(-2px); background: #ffc94d; }
+
+  .form-note { font-size: var(--step--1); color: var(--ink-soft); line-height: 1.55; margin: 0; max-width: 52ch; }
+
+  .aside { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius); padding: 1.5rem 1.75rem; }
+  .aside-title { font-family: var(--font-display); font-weight: 600; font-size: var(--step-1); margin: 0 0 1rem; }
+  .aside-line { font-size: var(--step-0); color: var(--ink); line-height: 1.5; margin: 0 0 1rem; }
+  .aside-line a { color: var(--deep); }
+  .aside-note { font-size: var(--step--1); color: var(--ink-soft); line-height: 1.55; margin: 1.25rem 0 0; padding-top: 1.25rem; border-top: 1px solid var(--hairline); }
+
+  @media (max-width: 48rem) {
+    .contact-grid { grid-template-columns: 1fr; gap: 1.75rem; }
+  }
+</style>
