@@ -65,6 +65,19 @@ const dateFmt = (d) =>
     <p class="empty hidden" id="no-match">No items in this category yet.</p>
   </section>
 
+  <section class="wrap">
+    <aside class="tip-ask">
+      <h2 class="tip-title">Seen something we missed?</h2>
+      <p class="tip-body">
+        If you come across science education or science literacy news in Georgia, send it
+        our way. The most useful thing you can include is a link to the original
+        announcement or report rather than a summary of it, since every item here is
+        checked against its source before it goes up.
+      </p>
+      <a class="tip-link" href="/contact">Send a news tip</a>
+    </aside>
+  </section>
+
   <script is:inline>
     const buttons = document.querySelectorAll('.filter-btn');
     const items = document.querySelectorAll('#news-list .news-item');
@@ -85,6 +98,37 @@ const dateFmt = (d) =>
   </script>
 
   <style>
+    .tip-ask {
+      margin: 3rem 0 1rem;
+      padding: 1.5rem 1.75rem;
+      background: var(--surface);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      max-width: min(70ch, 100%);
+    }
+    .tip-title {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: var(--step-1);
+      line-height: 1.2;
+      margin: 0 0 0.6rem;
+    }
+    .tip-body {
+      font-size: var(--step-0);
+      line-height: 1.65;
+      color: var(--ink);
+      margin: 0 0 1rem;
+    }
+    .tip-link {
+      display: inline-block;
+      font-weight: 600;
+      font-size: var(--step-0);
+      color: var(--deep);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .tip-link:hover { color: var(--ink); }
+
     .page-head { padding-block: clamp(1.75rem, 1.25rem + 2vw, 2.75rem) 1rem; }
     .eyebrow { text-transform: uppercase; letter-spacing: 0.1em; font-size: var(--step--1); font-weight: 600; color: var(--deep); margin: 0 0 0.6rem; }
     .page-title { font-family: var(--font-display); font-weight: 600; font-size: var(--step-2); line-height: 1.1; margin: 0 0 0.75rem; }
