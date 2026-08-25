@@ -51,7 +51,10 @@ const dateFmt = (d) =>
   </article>
 
   <style>
-    .article { max-width: 44rem; padding-block: clamp(2rem, 1.5rem + 3vw, 3.5rem) 4rem; }
+    /* The header block runs wider than the body. A headline gets room to
+       breathe, while running text keeps a comfortable measure of roughly 70
+       characters, which is where readability holds up. */
+    .article { max-width: 52rem; padding-block: clamp(2rem, 1.5rem + 3vw, 3.5rem) 4rem; }
     .back { display: inline-block; font-weight: 600; color: var(--deep); text-decoration: none; margin-bottom: 2rem; }
     .back:hover { text-decoration: underline; }
 
@@ -63,15 +66,22 @@ const dateFmt = (d) =>
     .tag-scholarship { background: var(--accent-soft); color: var(--accent-ink); }
     .tag-resource { background: #e3eaee; color: #38505c; }
 
-    .article-title { font-family: var(--font-display); font-weight: 600; font-size: var(--step-3); line-height: 1.12; margin: 0 0 1rem; }
-    .summary { font-size: var(--step-1); color: var(--ink); line-height: 1.55; margin: 0 0 2rem; padding-left: 1.1rem; border-left: 3px solid var(--accent); }
+    .article-title { font-family: var(--font-display); font-weight: 600; font-size: var(--step-2); line-height: 1.15; letter-spacing: -0.01em; margin: 0 0 1.1rem; text-wrap: balance; }
+    /* The accent rule sits in the margin so the summary's text stays flush with
+       the headline, the meta line and the body. A single left edge down the
+       whole column is what makes the page read as deliberate. */
+    .summary { font-size: var(--step-1); color: var(--ink); line-height: 1.55; margin: 0 0 2.25rem -1.1rem; padding-left: 1.1rem; border-left: 3px solid var(--accent); max-width: 42rem; }
 
-    .prose { font-size: var(--step-0); line-height: 1.7; color: var(--ink); }
+    .prose { font-size: var(--step-0); line-height: 1.7; color: var(--ink); max-width: 42rem; }
     .prose :global(p) { margin: 0 0 1.2rem; }
     .prose :global(a) { color: var(--deep); text-decoration: underline; text-underline-offset: 2px; }
     .prose :global(h2) { font-family: var(--font-display); font-size: var(--step-2); margin: 2rem 0 0.75rem; }
 
-    .source { margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--hairline); font-size: var(--step--1); color: var(--ink-soft); }
+    .source { max-width: 42rem; margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--hairline); font-size: var(--step--1); color: var(--ink-soft); }
     .source a { color: var(--deep); }
+
+    @media (max-width: 34rem) {
+      .summary { margin-left: 0; }
+    }
   </style>
 </BaseLayout>
