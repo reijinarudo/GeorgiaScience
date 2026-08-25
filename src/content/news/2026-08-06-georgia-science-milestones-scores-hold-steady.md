@@ -1,5 +1,5 @@
 ---
-title: "Georgia science Milestones scores hold steady or improve on all four assessments in 2025-2026"
+title: "Georgia Milestones science scores hold steady or improve on all four assessments in 2025-2026"
 date: 2026-08-06
 category: policy
 source: "https://www.wabe.org/georgia-milestone-2025-2026-scores-see-all-time-high-in-math-steady-rise-in-science-and-social-studies/"
