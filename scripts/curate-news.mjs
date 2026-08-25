@@ -16,6 +16,11 @@
  * human-readable review checklist into the pull request body. It never
  * commits to main and never publishes. A human merges, or does not.
  *
+ * The source recorded on an item is always a page the run actually opened and
+ * quoted. Where an institution blocks automated reading, as gadoe.org does, the
+ * run falls back to a reputable outlet it can read and links the institution's
+ * own announcement in the body as well.
+ *
  * Anything the model could not verify against a fetched source is discarded,
  * not smoothed over and not drafted. The same goes for anything that turns out,
  * on reading the page, to be a funding announcement rather than news.
@@ -360,7 +365,9 @@ Respond with one JSON object and nothing else, in a \`\`\`json fence:
     {
       "headline": "plain statement of what happened",
       "sourceUrl": "https://primary-source",
-      "sourceName": "publication or institution",
+      "sourceName": "publication or institution, whichever page you actually read",
+  "originalAnnouncementUrl": "the institution's own page if you used a different source, otherwise null",
+  "originalAnnouncementName": "the institution's name if the field above is set, otherwise null",
       "category": "scholarship | discovery | policy | event | resource",
       "eventDate": "YYYY-MM-DD, the date of the event or announcement",
       "location": "City or region, Georgia, or null if genuinely unknown",
@@ -397,6 +404,9 @@ ${STYLE_RULES}
 Honesty rules, these matter more than a polished draft:
 - Fetch and read the source before drafting. A link existing is not the same as
   the source saying what a draft claims.
+- The link you record must be a page you actually opened and quoted. A reader
+  following it has to be able to confirm what the draft says. An origin that
+  cannot be read is worth less here than a readable account of the same facts.
 - Every factual statement in the draft must be supported by text you read in the
   fetched page. If you cannot fetch the page, say so and set verified to false.
 - Never restate a claim the source does not support. If a figure appears only in
@@ -411,8 +421,27 @@ Suggested source name: ${candidate.sourceName || '(unknown)'}
 Suggested category: ${candidate.category}
 Suggested event date: ${candidate.eventDate || '(unknown)'}
 
-Fetch that URL and read it first. Then respond with one JSON object and nothing
-else, in a \`\`\`json fence:
+Fetch that URL and read it first.
+
+If that page cannot be read, and some institutional sites block automated
+fetching and return only metadata, do not give up on the story yet. Search for
+another page covering the same announcement that you can actually read, and
+verify against that instead. Prefer in this order:
+
+1. The institution's own announcement, if it can be read.
+2. A reputable Georgia news outlet reporting the story itself.
+3. A reputable outlet reprinting the announcement in full.
+
+Never fall back to an aggregator, a content farm, an AI generated summary, a
+social media post, or a site you cannot identify. If nothing readable and
+reputable exists, set verified to false and stop.
+
+Record in "source" whichever page you actually read and quoted, and name it in
+"sourceName". If that page is not the institution's own announcement and the
+institution does have one, put its URL in "originalAnnouncementUrl" so the item
+can link both.
+
+Then respond with one JSON object and nothing else, in a \`\`\`json fence:
 
 {
   "verified": true or false,
@@ -422,7 +451,9 @@ else, in a \`\`\`json fence:
   "date": "YYYY-MM-DD, the date of the event or announcement, not today",
   "category": "scholarship | discovery | policy | event | resource",
   "source": "the primary source URL you actually read",
-  "sourceName": "publication or institution",
+  "sourceName": "publication or institution, whichever page you actually read",
+  "originalAnnouncementUrl": "the institution's own page if you used a different source, otherwise null",
+  "originalAnnouncementName": "the institution's name if the field above is set, otherwise null",
   "location": "City or region, Georgia, or null if the source does not say",
   "summary": "one to two plain language sentences for the list and home pages",
   "body": "one to three sentences of plain language explanation, no heading, no source link, the script adds the link",
@@ -461,9 +492,12 @@ from the page.`;
     {
       type: 'web_fetch_20250910',
       name: 'web_fetch',
-      max_uses: 4,
+      max_uses: 6,
       max_content_tokens: 40000,
     },
+    // Needed for the fallback: finding a readable account of the same story
+    // when the institution's own page cannot be fetched.
+    { type: 'web_search_20250305', name: 'web_search', max_uses: 4 },
   ];
   const res = await callAnthropic({ system, userText, tools, maxTokens: 6000 });
   const parsed = extractJson(res.text);
@@ -520,6 +554,23 @@ function validateDraft(d) {
     errors.push('source "' + source + '" is not a valid URL');
   }
 
+  // Optional. A bad value here is dropped rather than failing the item, since
+  // it is a courtesy link and not the source the claims were checked against.
+  let originalUrl = null;
+  let originalName = null;
+  const rawOriginal = String(d.originalAnnouncementUrl || '').trim();
+  if (rawOriginal && !/^(null|n\/a|none)$/i.test(rawOriginal)) {
+    try {
+      const u = new URL(rawOriginal);
+      if ((u.protocol === 'https:' || u.protocol === 'http:') && normalizeUrl(rawOriginal) !== normalizeUrl(d.source)) {
+        originalUrl = u.toString();
+        originalName = sanitizeText(d.originalAnnouncementName || '') || 'the original announcement';
+      }
+    } catch {
+      warnings.push('originalAnnouncementUrl was not a valid URL and was dropped');
+    }
+  }
+
   const allText = [title, summary, body, missionSentence || ''].join(' ');
   if (/[—–]/.test(allText)) errors.push('an em or en dash survived sanitising');
   if (/\bprove[dsn]?\b|\bproof\b/i.test(allText)) {
@@ -551,6 +602,8 @@ function validateDraft(d) {
       category: d.category,
       source,
       sourceName,
+      originalUrl,
+      originalName,
       location,
       summary,
       body,
@@ -586,7 +639,11 @@ function buildMarkdown(item) {
   lines.push('');
   lines.push(item.body);
   lines.push('');
-  lines.push('Read the [primary source](' + item.source + ').');
+  lines.push('Read the [source](' + item.source + ').');
+  if (item.originalUrl) {
+    lines.push('');
+    lines.push('Original announcement: [' + item.originalName + '](' + item.originalUrl + ').');
+  }
   if (item.missionSentence) {
     lines.push('');
     lines.push(item.missionSentence);
@@ -629,12 +686,19 @@ function buildPrBody(results, meta) {
     );
     out.push('');
     out.push('Source: [' + it.sourceName + '](' + it.source + ')');
+    if (it.originalUrl) {
+      out.push('');
+      out.push(
+        'Original announcement, which could not be read automatically: [' +
+          it.originalName + '](' + it.originalUrl + ')'
+      );
+    }
     out.push('');
     out.push('> ' + it.summary);
     out.push('');
     out.push('Verify before merging:');
     out.push('');
-    out.push('- [ ] The link opens, and it is the primary source, not an aggregator or a summary');
+    out.push('- [ ] The link opens, and the page is a reputable source, not an aggregator or an AI summary');
     out.push('- [ ] `' + it.date + '` is the date of the announcement or event, not the date this ran');
     out.push('- [ ] `' + it.category + '` is the right category');
     it.claims.forEach((c) => {
@@ -808,5 +872,4 @@ if (invokedDirectly) {
     process.exit(1);
   });
 }
-
 export { validateDraft, buildMarkdown, buildPrBody, normalizeUrl, slugify, sanitizeText, parseFrontmatter };
