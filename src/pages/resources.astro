@@ -38,14 +38,23 @@ const { sections } = resourceData;
           <ul class="res-list">
             {s.items.map((item) => (
               <li class="res-card">
-                <div class="res-top">
-                  <h3 class="res-name">
-                    <a href={item.url} target="_blank" rel="noopener noreferrer">{item.name}</a>
-                  </h3>
-                  <span class="res-audience">{item.audience}</span>
+                <div class="res-body">
+                  {item.logo ? (
+                    <img class="res-logo" src={item.logo} alt="" loading="lazy" decoding="async" />
+                  ) : (
+                    <span class="res-mono" data-len={String(item.initials.length)} aria-hidden="true">{item.initials}</span>
+                  )}
+                  <div class="res-main">
+                    <div class="res-top">
+                      <h3 class="res-name">
+                        <a href={item.url} target="_blank" rel="noopener noreferrer">{item.name}</a>
+                      </h3>
+                      <span class="res-audience">{item.audience}</span>
+                    </div>
+                    <p class="res-desc">{item.description}</p>
+                    <p class="res-why"><span>Why it is here:</span> {item.rationale}</p>
+                  </div>
                 </div>
-                <p class="res-desc">{item.description}</p>
-                <p class="res-why"><span>Why it is here:</span> {item.rationale}</p>
               </li>
             ))}
           </ul>
@@ -88,6 +97,31 @@ const { sections } = resourceData;
     background: var(--surface); border: 1px solid var(--hairline);
     border-radius: var(--radius); padding: 1.25rem 1.5rem;
   }
+
+  .res-body { display: flex; align-items: flex-start; gap: 1.1rem; }
+  .res-main { flex: 1; min-width: 0; }
+  .res-logo {
+    width: 112px; height: 52px; flex-shrink: 0;
+    object-fit: contain; object-position: left center;
+    margin-top: 0.2rem;
+  }
+  .res-mono {
+    width: 112px; height: 52px; flex-shrink: 0;
+    border-radius: 12px; margin-top: 0.2rem;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--deep); color: var(--surface);
+    font-family: var(--font-display); font-weight: 600;
+    font-size: 1.05rem; letter-spacing: 0.02em;
+    line-height: 1; user-select: none;
+  }
+  .res-mono[data-len="1"],
+  .res-mono[data-len="2"] { font-size: 1.35rem; }
+  .res-mono[data-len="3"] { font-size: 1.15rem; }
+  .res-mono[data-len="4"] { font-size: 0.95rem; }
+  .res-mono[data-len="5"] { font-size: 0.8rem; }
+  .res-mono[data-len="6"] { font-size: 0.7rem; }
+  .res-mono[data-len="7"] { font-size: 0.62rem; }
+
   .res-top { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
   .res-name {
     font-family: var(--font-display); font-weight: 600; font-size: var(--step-1);
@@ -105,4 +139,17 @@ const { sections } = resourceData;
   .res-why span { font-weight: 700; color: var(--deep); }
 
   .res-empty { font-size: var(--step-0); color: var(--ink-soft); font-style: italic; }
+
+  @media (max-width: 30rem) {
+    .res-logo, .res-mono { width: 88px; height: 42px; }
+    .res-mono { font-size: 0.85rem; }
+    .res-mono[data-len="1"],
+    .res-mono[data-len="2"] { font-size: 1.1rem; }
+    .res-mono[data-len="3"] { font-size: 0.92rem; }
+    .res-mono[data-len="4"] { font-size: 0.76rem; }
+    .res-mono[data-len="5"] { font-size: 0.64rem; }
+    .res-mono[data-len="6"] { font-size: 0.56rem; }
+    .res-mono[data-len="7"] { font-size: 0.5rem; }
+    .res-body { gap: 0.85rem; }
+  }
 </style>
