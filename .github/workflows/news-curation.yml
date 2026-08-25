@@ -100,7 +100,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ITEM_COUNT: ${{ steps.curate.outputs.item_count }}
-          UNVERIFIED_COUNT: ${{ steps.curate.outputs.unverified_count }}
         run: |
           set -euo pipefail
           RUN_DATE="$(date -u +%Y-%m-%d)"
@@ -117,9 +116,6 @@ jobs:
           git push origin "$BRANCH"
 
           TITLE="News drafts for review, ${RUN_DATE} (${ITEM_COUNT} item(s))"
-          if [ "${UNVERIFIED_COUNT}" != "0" ]; then
-            TITLE="${TITLE} [${UNVERIFIED_COUNT} UNVERIFIED]"
-          fi
 
           gh pr create \
             --base main \
