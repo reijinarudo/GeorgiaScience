@@ -16,8 +16,9 @@
  * human-readable review checklist into the pull request body. It never
  * commits to main and never publishes. A human merges, or does not.
  *
- * Anything the model could not verify against a fetched source is marked
- * UNVERIFIED rather than smoothed over.
+ * Anything the model could not verify against a fetched source is discarded,
+ * not smoothed over and not drafted. The same goes for anything that turns out,
+ * on reading the page, to be a funding announcement rather than news.
  *
  * Env:
  *   ANTHROPIC_API_KEY   required
@@ -290,6 +291,12 @@ EXCLUDE, without exception:
   is marketing, not news, even when it mentions schools.
 - Unvetted or low quality sources.
 - Content that overstates certainty or blurs evidence with speculation.
+- Research funding announcements. A grant, award, contract, or selection for a
+  program given to a Georgia institution or researcher is not a news item for
+  this site, however large the figure or prestigious the funder. Money changing
+  hands is not a finding, and it is not education. Report a research project
+  only when there is an actual result to explain. A press release announcing
+  that work will begin is the clearest example of what to drop.
 - Conflict framing introduced by an aggregator or an AI overview. If the only
   "news" is a summary dressing a development up as a fight, report the underlying
   development plainly or drop the item.
@@ -409,6 +416,7 @@ else, in a \`\`\`json fence:
 
 {
   "verified": true or false,
+  "inScope": true or false,
   "fetchNote": "one sentence on whether the page was fetched and what it is",
   "title": "Specific headline: what happened and who it affects",
   "date": "YYYY-MM-DD, the date of the event or announcement, not today",
@@ -426,9 +434,23 @@ else, in a \`\`\`json fence:
   "missionSentence": "one optional sentence connecting this to science literacy in Georgia, or null"
 }
 
-Category meanings: scholarship is student funding, discovery is a research
-finding, policy is standards or law or an official decision, event is a dated
-happening, resource is a program or tool. Use exactly one of the five values.
+Category meanings, applied strictly:
+- scholarship: funding awarded to students. Not funding awarded to researchers
+  or institutions, which is out of scope entirely.
+- discovery: a research finding that has been made and can be explained. Never
+  a project that has merely been funded, announced, or begun.
+- policy: standards, law, or an official decision.
+- event: a dated happening.
+- resource: a program, tool, or material that a student, teacher, or member of
+  the public can actually use.
+Use exactly one of the five values.
+
+Set "inScope" to false if, now that you have read the page, it turns out to be a
+funding, grant, award, or contract announcement rather than a finding, an
+education story, a policy decision, an event, or a usable resource. Judge this
+from the page itself, not from the candidate description. An item marked out of
+scope is discarded, so err toward false when the page is mostly about money
+being awarded.
 
 List one entry in "claims" for each substantive factual assertion in your summary
 and body, including any number, dollar figure, date, or institution name. The
@@ -515,8 +537,9 @@ function validateDraft(d) {
     ? d.unsupported.filter(Boolean).map((u) => sanitizeText(u))
     : [];
 
+  const inScope = d.inScope !== false;
   const verified = d.verified === true && claims.length > 0;
-  if (!verified) warnings.push('the model did not confirm it read the source, item marked UNVERIFIED');
+  if (!verified) warnings.push('the model did not confirm it read the source');
 
   return {
     ok: errors.length === 0,
@@ -535,6 +558,7 @@ function validateDraft(d) {
       claims,
       unsupported,
       verified,
+      inScope,
       fetchNote: sanitizeText(d.fetchNote || ''),
     },
   };
@@ -543,6 +567,13 @@ function validateDraft(d) {
 /* ----------------------------------------------------------------- output */
 
 function buildMarkdown(item) {
+  // Structural guarantee, not a stylistic one. An item the drafting pass could
+  // not verify against a fetched source must never reach a branch, where it
+  // would sit one tap away from publication. Callers drop these upstream; this
+  // throw is here so a future change cannot quietly reopen the path.
+  if (!item.verified) {
+    throw new Error('Refusing to write an unverified item: ' + item.title);
+  }
   const lines = ['---'];
   lines.push('title: ' + yamlString(item.title));
   lines.push('date: ' + item.date);
@@ -553,13 +584,6 @@ function buildMarkdown(item) {
   lines.push('summary: ' + yamlString(item.summary));
   lines.push('---');
   lines.push('');
-  if (!item.verified) {
-    lines.push(
-      'UNVERIFIED DRAFT. The source page could not be confirmed during drafting. ' +
-        'Check every statement below against the source before merging, or close this pull request.'
-    );
-    lines.push('');
-  }
   lines.push(item.body);
   lines.push('');
   lines.push('Read the [primary source](' + item.source + ').');
@@ -573,7 +597,6 @@ function buildMarkdown(item) {
 
 function buildPrBody(results, meta) {
   const kept = results.filter((r) => r.kept);
-  const anyUnverified = kept.some((r) => !r.item.verified);
 
   const out = [];
   if (NOTIFY_HANDLE) {
@@ -588,10 +611,8 @@ function buildPrBody(results, meta) {
       ' Nothing here is published until this pull request is merged.'
   );
   out.push('');
-  if (anyUnverified) {
-    out.push('**One or more drafts are marked UNVERIFIED.** The drafting pass could not confirm the source. Read those against the source with extra care, or close this pull request.');
-    out.push('');
-  }
+  out.push('Every item below was drafted from a source page the run actually read. Anything it could not read was discarded and is not here.');
+  out.push('');
   out.push('**How to review on a phone.** For each item, open the source link, confirm the quoted lines are really on that page, and tick the boxes. If something is wrong, edit the file on this branch with the pencil icon, or close this pull request. Merging deploys the site.');
   out.push('');
 
@@ -599,7 +620,7 @@ function buildPrBody(results, meta) {
     const it = r.item;
     out.push('---');
     out.push('');
-    out.push('### ' + (idx + 1) + '. ' + it.title + (it.verified ? '' : '  (UNVERIFIED)'));
+    out.push('### ' + (idx + 1) + '. ' + it.title);
     out.push('');
     out.push('`' + r.file + '`');
     out.push('');
@@ -634,7 +655,7 @@ function buildPrBody(results, meta) {
     out.push('');
   });
 
-  const dropped = results.filter((r) => !r.kept);
+  const dropped = results.filter((r) => !r.kept && !r.silent);
   if (dropped.length) {
     out.push('---');
     out.push('');
@@ -715,6 +736,30 @@ async function main() {
     }
 
     const item = checked.item;
+
+    // Two gates, both applied after the page was read. Neither is surfaced in
+    // the pull request body: an item that fails here is not a candidate the
+    // reviewer needs to see, and listing it would only invite second guessing
+    // of a decision made for want of evidence. Both are logged to the run.
+    if (!item.verified) {
+      results.push({
+        kept: false,
+        silent: true,
+        headline,
+        reason: 'could not be verified against a fetched source, discarded',
+      });
+      continue;
+    }
+    if (!item.inScope) {
+      results.push({
+        kept: false,
+        silent: true,
+        headline,
+        reason: 'out of scope on reading the source, most likely a funding announcement',
+      });
+      continue;
+    }
+
     const finalUrlKey = normalizeUrl(item.source);
     if (published.urls.has(finalUrlKey)) {
       results.push({ kept: false, headline, reason: 'the fetched source is already on the site' });
@@ -730,7 +775,7 @@ async function main() {
 
     const file = 'src/content/news/' + slug + '.md';
     if (!DRY_RUN) await writeFile(path.join(ROOT, file), buildMarkdown(item), 'utf8');
-    log((DRY_RUN ? 'Would write ' : 'Wrote ') + file + (item.verified ? '' : ' (UNVERIFIED)'));
+    log((DRY_RUN ? 'Would write ' : 'Wrote ') + file);
 
     results.push({ kept: true, headline, file, item, warnings: checked.warnings });
   }
@@ -739,11 +784,15 @@ async function main() {
   await writeFile(path.join(ROOT, PR_BODY_FILE), buildPrBody(results, { notes }), 'utf8');
 
   await setOutput('item_count', String(kept.length));
-  await setOutput('unverified_count', String(kept.filter((r) => !r.item.verified).length));
+  await setOutput('discarded_count', String(results.filter((r) => r.silent).length));
 
+  // Everything dropped is logged here, including the silent drops that never
+  // reach the pull request. This is where to look when a run finds nothing.
+  for (const r of results.filter((x) => !x.kept)) {
+    log('  dropped: ' + r.headline + ' (' + r.reason + ')');
+  }
   if (kept.length === 0) {
     log('Nothing cleared the bar. No pull request will be opened.');
-    for (const r of results) log('  dropped: ' + r.headline + ' (' + r.reason + ')');
   } else {
     log(kept.length + ' item(s) ready for review.');
   }
