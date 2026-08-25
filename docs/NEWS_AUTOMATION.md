@@ -12,9 +12,11 @@ Every Monday morning, a GitHub Actions workflow:
    open automation pull request, so the same story does not resurface.
 2. Calls the Anthropic API with server side web search to look for Georgia
    science education and science literacy news from the last 45 days.
-3. For each candidate, makes a second call that fetches and reads the primary
-   source, then drafts the item and reports which specific claims the source
-   supports, with verbatim quotes.
+3. For each candidate, makes a second call that fetches and reads the source,
+   then drafts the item and reports which specific claims that page supports,
+   with verbatim quotes. If the institution's own page cannot be read, the run
+   falls back to a reputable outlet covering the same story and links the
+   institution's announcement in the body as well.
 4. Validates every draft against the collection schema in
    `src/content.config.ts`. An item that fails is dropped, never repaired by
    guessing.
@@ -153,6 +155,31 @@ is who receives the money: students, yes; researchers and institutions, no.
 The rule is enforced twice, once in the curation search and again after the
 source page has been read, since a headline does not always reveal that a story
 is an award announcement.
+
+## Sources, and why the link is not always the origin
+
+The source recorded on an item is always a page the run actually opened and
+quoted. That is the property that protects the site: a reader following the link
+can confirm what the item says.
+
+It is not the same as linking the origin. Some institutional sites, gadoe.org
+among them, return only metadata to automated requests, so their press releases
+cannot be read by this workflow at all. Requiring the origin would have excluded
+the Georgia Department of Education permanently, which is not a defensible
+outcome for a site about Georgia science education.
+
+So when the origin cannot be read, the run verifies against a reputable outlet
+covering the same story, links that in `source`, and adds the institution's own
+announcement as a second link in the body. Aggregators, content farms, AI
+summaries, and social posts are never acceptable fallbacks.
+
+The News page wording reflects this. It reads "linked to a source you can check"
+rather than "linked to its primary source", because the second was a promise the
+workflow could not keep.
+
+When reviewing, you can always replace the source with the institution's link by
+hand if you have confirmed the content yourself. The workflow is constrained by
+what it can read. You are not.
 
 ## Cost
 
