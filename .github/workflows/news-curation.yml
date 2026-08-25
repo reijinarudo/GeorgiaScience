@@ -1,0 +1,150 @@
+# Weekly news curation for GeorgiaScience.org.
+#
+# This workflow searches for Georgia science education news, drafts schema exact
+# Markdown files, verifies that the site still builds with them, and opens a
+# pull request for review. It never commits to main. Merging the pull request is
+# the human gate, and merging is what triggers the existing deploy workflow.
+#
+# If nothing clears the bar, no pull request is opened and no notification is
+# sent. The run summary in the Actions tab still records what was searched.
+
+name: Weekly news curation
+
+on:
+  schedule:
+    # 11:00 UTC every Monday. That is 07:00 in Georgia during daylight saving
+    # time and 06:00 during standard time. GitHub delays scheduled runs under
+    # load, so treat the time as approximate.
+    - cron: '0 11 * * 1'
+  workflow_dispatch:
+    inputs:
+      max_items:
+        description: 'Maximum items to draft in this run'
+        required: false
+        default: '3'
+      lookback_days:
+        description: 'How many days back to search'
+        required: false
+        default: '45'
+      dry_run:
+        description: 'Search and draft, but do not open a pull request'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  # Labels live on the issues API, which is what applies the news-automation
+  # label used to find this workflow's own open pull requests.
+  issues: write
+
+concurrency:
+  group: news-curation
+  cancel-in-progress: false
+
+jobs:
+  curate:
+    # Do not run on forks of this repository.
+    if: github.repository == 'reijinarudo/GeorgiaScience'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Collect items already awaiting review
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # The label is how this workflow finds its own open pull requests.
+          gh label create news-automation \
+            --color 0E8A16 \
+            --description "Opened by the scheduled news curation workflow" \
+            >/dev/null 2>&1 || true
+
+          : > pending-items.txt
+          for n in $(gh pr list --state open --label news-automation --json number --jq '.[].number'); do
+            gh pr diff "$n" --patch | grep -E '^\+(title|source):' >> pending-items.txt || true
+          done
+          echo "Pending lines harvested from open pull requests: $(wc -l < pending-items.txt)"
+
+      - name: Curate and draft
+        id: curate
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NEWS_MODEL: claude-sonnet-5
+          NEWS_MAX_ITEMS: ${{ inputs.max_items || '3' }}
+          NEWS_LOOKBACK_DAYS: ${{ inputs.lookback_days || '45' }}
+          NEWS_PENDING_FILE: pending-items.txt
+          NEWS_PR_BODY_FILE: pr-body.md
+          # Mentioned at the top of the pull request body. A mention notifies
+          # under GitHub's default notification setting, so the email does not
+          # depend on the repository Watch configuration.
+          NEWS_NOTIFY_HANDLE: reijinarudo
+        run: node scripts/curate-news.mjs
+
+      - name: Verify the site still builds with the drafted items
+        if: steps.curate.outputs.item_count != '0'
+        run: |
+          npm ci
+          npm run build
+
+      - name: Open the review pull request
+        if: steps.curate.outputs.item_count != '0' && inputs.dry_run != true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ITEM_COUNT: ${{ steps.curate.outputs.item_count }}
+          UNVERIFIED_COUNT: ${{ steps.curate.outputs.unverified_count }}
+        run: |
+          set -euo pipefail
+          RUN_DATE="$(date -u +%Y-%m-%d)"
+          BRANCH="news/auto-${RUN_DATE}-${{ github.run_number }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+
+          # Only the drafted content files. Never the build output or the
+          # scratch files this workflow writes into the working tree.
+          git add src/content/news
+          git commit -m "News drafts for review, ${RUN_DATE} (${ITEM_COUNT} item(s))"
+          git push origin "$BRANCH"
+
+          TITLE="News drafts for review, ${RUN_DATE} (${ITEM_COUNT} item(s))"
+          if [ "${UNVERIFIED_COUNT}" != "0" ]; then
+            TITLE="${TITLE} [${UNVERIFIED_COUNT} UNVERIFIED]"
+          fi
+
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "$TITLE" \
+            --body-file pr-body.md \
+            --label news-automation \
+            --assignee reijinarudo
+
+      - name: Record the run in the job summary
+        if: always()
+        run: |
+          if [ -f pr-body.md ]; then
+            cat pr-body.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No curation output was produced." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload the draft output for inspection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: news-curation-output
+          path: |
+            pr-body.md
+            pending-items.txt
+          if-no-files-found: ignore
+          retention-days: 14
