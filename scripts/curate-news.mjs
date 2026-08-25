@@ -51,7 +51,7 @@ const CATEGORIES = ['scholarship', 'discovery', 'policy', 'event', 'resource'];
 
 const MODEL = process.env.NEWS_MODEL || 'claude-sonnet-5';
 const MAX_ITEMS = clampInt(process.env.NEWS_MAX_ITEMS, 3, 1, 5);
-const LOOKBACK_DAYS = clampInt(process.env.NEWS_LOOKBACK_DAYS, 45, 7, 180);
+const LOOKBACK_DAYS = clampInt(process.env.NEWS_LOOKBACK_DAYS, 90, 7, 365);
 const PR_BODY_FILE = process.env.NEWS_PR_BODY_FILE || 'pr-body.md';
 // GitHub handle to @mention at the top of the pull request. A mention notifies
 // under the default "Participating and @mentions" setting, so the notification
@@ -284,11 +284,33 @@ function extractJson(text) {
 /* ----------------------------------------------------------- phase 1 */
 
 const SCOPE_RULES = `
-INCLUDE: Georgia science education and scientific literacy. Local scholarships,
-research discoveries, policy decisions, events, and programs that affect science
-education in Georgia. Reputable Georgia institutions such as the Georgia
-Department of Education, UGA, Georgia Tech, Georgia State, Emory, the University
-System of Georgia, and the Georgia Science Teachers Association.
+INCLUDE:
+- Georgia science education and scientific literacy at any level, K-12, higher
+  education, and public understanding.
+- Policy and administrative decisions that affect how science is taught, funded,
+  assessed, or resourced in Georgia. Standards adoption, curriculum decisions,
+  assessment changes, appropriations that change classroom capacity, state board
+  actions, and legislation. The intersection of policy and the quality of science
+  education is a priority for this site.
+- Health and medical science that bears on public understanding in Georgia,
+  including public health decisions and communication.
+- Technology, computing, engineering, and robotics education, including
+  competitions, curricula, and training programs.
+- Research findings from Georgia institutions that a general audience can learn
+  something from.
+- Programs, tools, curricula, competitions, scholarships, and materials that
+  Georgia students, teachers, or members of the public can actually use.
+
+Reputable Georgia institutions include the Georgia Department of Education, UGA,
+Georgia Tech and its CEISMC, Georgia State, Emory, the University System of
+Georgia, the Georgia Science Teachers Association, the Georgia Department of
+Public Health, regional STEM centers, and school districts.
+
+On policy items specifically. Report the decision, who made it, what the record
+says about its effects, and what remains unknown. Do not assign blame, do not use
+partisan framing, and do not characterise anyone's motives. A reader should be
+able to see what happened and reach their own conclusion. That is both the house
+standard and the harder version to dismiss.
 
 EXCLUDE, without exception:
 - Partisan political advocacy not about science education.
@@ -311,6 +333,19 @@ source themselves. Prefer the institution's own announcement page.
 
 Bias toward grades 8 to 12 relevance, but include clearly relevant items outside
 that band.
+
+Not everything worth publishing is an event. A resource item, a program, tool,
+competition, curriculum, or scholarship that Georgia students, teachers, or the
+public can use, qualifies on being current and useful. It does not need a recent
+announcement behind it. Summer programs, standing competitions, and available
+curricula all count. Look for these deliberately, because they are easy to miss
+when searching for news, and a site with nothing but breaking news serves its
+readers less well than one that also points them at things they can use.
+
+For a resource item the date must still come from the source: the program or
+application start, a stated deadline, or the page's own publication or update
+date. If the page states no date anywhere, drop the item rather than inventing
+one.
 `.trim();
 
 const STYLE_RULES = `
@@ -411,6 +446,12 @@ Honesty rules, these matter more than a polished draft:
   fetched page. If you cannot fetch the page, say so and set verified to false.
 - Never restate a claim the source does not support. If a figure appears only in
   a secondary source, leave it out and note it.
+- Add no background from your own knowledge. Not context about how a programme
+  works, not an explanation of what a test measures, not history, however
+  confident you are and however harmless it seems. If it is not on the page you
+  read, it does not go in the item. Unsourced background is the most dangerous
+  content you can produce here, because it looks like the rest of the draft and
+  carries no quote for the reviewer to check.
 - Report doubt rather than smoothing it over.`;
 
   const userText = `Draft one news item from this candidate.
@@ -483,10 +524,13 @@ from the page itself, not from the candidate description. An item marked out of
 scope is discarded, so err toward false when the page is mostly about money
 being awarded.
 
-List one entry in "claims" for each substantive factual assertion in your summary
-and body, including any number, dollar figure, date, or institution name. The
-quotes are what the human will check the draft against, so they must be verbatim
-from the page.`;
+"claims" must cover the whole draft, not a selection from it. Every factual
+assertion in your title, summary, and body needs an entry, including every
+number, figure, date, grade level, and institution name. If you cannot supply a
+verbatim quote for something, remove it from the draft rather than leaving it
+unlisted. The reviewer checks the draft by reading these quotes, so anything not
+listed reaches them unverified while looking verified. The quotes must be
+verbatim from the page you read.`;
 
   const tools = [
     {
@@ -577,6 +621,13 @@ function validateDraft(d) {
     warnings.push('uses "prove" or "proof", check the wording against house style');
   }
 
+  // Numbers are where unsourced background gives itself away. Anything numeric in
+  // the draft that appears nowhere in the claims or their quotes is flagged for
+  // the reviewer. This is the check that would have caught a draft asserting
+  // "grades 3 through 8" from the model's own knowledge rather than the source.
+  const numbersIn = (t) =>
+    (String(t).match(/\d[\d,]*(?:\.\d+)?/g) || []).map((n) => n.replace(/[,]/g, ''));
+
   const claims = Array.isArray(d.claims)
     ? d.claims
         .filter((c) => c && c.claim)
@@ -587,6 +638,17 @@ function validateDraft(d) {
   const unsupported = Array.isArray(d.unsupported)
     ? d.unsupported.filter(Boolean).map((u) => sanitizeText(u))
     : [];
+
+  const supportText = claims.map((c) => c.claim + ' ' + c.quote).join(' ') + ' ' + String(d.date || '');
+  const supported = new Set(numbersIn(supportText));
+  const unbacked = [...new Set(numbersIn([title, summary, body].join(' ')))].filter(
+    (n) => !supported.has(n)
+  );
+  if (unbacked.length) {
+    warnings.push(
+      'these numbers appear in the draft but in none of the quotes: ' + unbacked.join(', ')
+    );
+  }
 
   const inScope = d.inScope !== false;
   const verified = d.verified === true && claims.length > 0;
