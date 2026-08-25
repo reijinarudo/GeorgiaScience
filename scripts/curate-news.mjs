@@ -366,7 +366,7 @@ async function curate(published) {
     .join('\n');
 
   const system = `You are the curation pass of the news workflow for
-GeorgiaScience.org, the public site of Georgia Citizens for Integrity and
+GeorgiaScience.org, the public site of Georgia Citizens for Integrity in
 Science Education. The organization models the verification practices it
 teaches. Your job is to find candidate news items, not to publish them.
 
