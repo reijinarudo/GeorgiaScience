@@ -66,6 +66,100 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <li>Content that overstates certainty or blurs evidence with speculation.</li>
       </ul>
 
+      <h2>Where this came from</h2>
+      <p>
+        Georgia Citizens for Integrity in Science Education was founded in response to the
+        warning stickers placed on biology textbooks in Cobb County in 2002, which described
+        evolution as a theory rather than a fact. The organization described itself at the
+        time as parents, clergy members, K-12 faculty, higher education faculty, and other
+        concerned citizens, and it stated its purpose as promoting scientific literacy and
+        excellence in science education. That is the same purpose this site works toward
+        today.
+      </p>
+      <p>
+        GCISE was among the organizations that joined the amicus curiae brief in
+        <em>Selman v. Cobb County School District</em>, the federal case that ended with the
+        stickers removed from Cobb County textbooks. The organization also described having
+        worked to return the word evolution to the state science curriculum and to restore
+        concepts including the age of the Earth, plate tectonics, and the Big Bang. That
+        second account comes from GCISE's own description of its work rather than from an
+        independent source, and we report it as such.
+      </p>
+      <p>
+        The organization's activity thinned through the early 2010s and its website went
+        quiet after 2013. The domain and the work later passed to the current curator. This
+        site is a continuation of that effort rather than a new organization taking an old
+        name.
+      </p>
+
+      <h2>The people who built it</h2>
+      <p>
+        Credit belongs to people who did the work long before this site existed. The
+        following is drawn from GCISE's own published pages and from what these individuals
+        have said publicly about their own roles.
+      </p>
+      <ul>
+        <li>
+          <strong>Sarah Pallas, Ph.D.</strong> Co-founder, member, and the organization's
+          webmaster, and a member of its Media Advisory Panel. She was Professor of
+          Neuroscience and Biology at Georgia State University during her involvement and is
+          now on the faculty at the University of Massachusetts Amherst.
+        </li>
+        <li>
+          <strong>Mark Farmer, Ph.D.</strong> Member and Media Advisory Panel member, then
+          Professor and Chair of Cell Biology at the University of Georgia.
+        </li>
+        <li>
+          <strong>Jeffrey Selman.</strong> Lead plaintiff in <em>Selman v. Cobb County
+          School District</em> and, by his own account, a member of the GCISE advisory board.
+        </li>
+        <li>
+          <strong>Carlos Moreno, Ph.D., Wes McCoy, Ph.D., and Ron Matson, Ph.D.</strong>
+          Chair, Vice-Chair, and Secretary respectively, as listed on the organization's
+          site in 2013.
+        </li>
+      </ul>
+      <p>
+        Many others contributed as members, as teachers, and as citizens who showed up. The
+        record we have is partial, and we would rather say so than imply it is complete. If
+        you were involved and we have your role wrong or missing, please tell us.
+      </p>
+
+      <h2>Who curates this site</h2>
+      <div class="curator">
+        <img
+          src="/curator-finley.jpg"
+          alt="Reginald Finley, curator of GeorgiaScience.org"
+          class="curator-photo"
+          width="560"
+          height="560"
+          loading="lazy"
+        />
+        <div class="curator-id">
+          <p class="curator-name">Reginald Finley, Ph.D.</p>
+          <p class="curator-role">Curator</p>
+        </div>
+      </div>
+      <p>
+        GeorgiaScience.org is curated by Reginald Finley, Ph.D., who teaches biology, human
+        anatomy and physiology, health sciences, and scientific literacy as adjunct faculty
+        at Franklin University.
+      </p>
+      <p>
+        What drew him to this work was health misinformation: watching accurate information
+        about the human body lose ground to confident claims that were simply easier to
+        repeat. Generative AI has since made that problem faster and more fluent, which is
+        the subject of his book <em>AI-Epistemic Resilience: A Framework for Knowledge
+        Integrity in the Age of Artificial Intelligence</em> (2026). He also founded the
+        Finley Robotics Initiative, a nonprofit expanding AI and robotics access for
+        underserved students. He lives in Newnan, Georgia.
+      </p>
+      <p>
+        Curator is the accurate word for the job. This site does not conduct original
+        research or issue findings. It selects, verifies, and organizes the work of others,
+        and it says where everything came from so readers can check.
+      </p>
+
       <div class="principle">
         <p>
           We try to practice the literacy we teach: verify claims, cite sources, state
@@ -92,6 +186,39 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .prose p { font-size: var(--step-0); line-height: 1.7; color: var(--ink); margin: 0 0 1.1rem; }
   .prose ul { margin: 0 0 1.1rem; padding-left: 1.25rem; }
   .prose li { font-size: var(--step-0); line-height: 1.6; color: var(--ink); margin-bottom: 0.5rem; }
+
+  .curator {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin: 0 0 1.25rem;
+    flex-wrap: wrap;
+  }
+  .curator-photo {
+    width: 108px;
+    height: 108px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 3px solid var(--surface);
+    box-shadow: 0 0 0 1px var(--hairline);
+  }
+  .curator-id { min-width: 0; }
+  .curator-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--step-1);
+    margin: 0 0 0.15rem;
+    line-height: 1.2;
+  }
+  .curator-role {
+    margin: 0;
+    font-size: var(--step--1);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
 
   .principle {
     margin-top: 2.5rem;
