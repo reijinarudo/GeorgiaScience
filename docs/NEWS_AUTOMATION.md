@@ -18,9 +18,13 @@ Every Monday morning, a GitHub Actions workflow:
 4. Validates every draft against the collection schema in
    `src/content.config.ts`. An item that fails is dropped, never repaired by
    guessing.
-5. Runs `npm run build` with the drafts in place. If the build fails, no pull
+5. Discards, without drafting a file, anything it could not verify against a
+   page it actually read, and anything that turns out on reading to be a
+   funding or award announcement rather than news. Both discards are logged in
+   the run but are not shown in the pull request.
+6. Runs `npm run build` with the drafts in place. If the build fails, no pull
    request is opened and the run fails loudly.
-6. Opens a pull request containing the drafted `.md` files and a review
+7. Opens a pull request containing the drafted `.md` files and a review
    checklist.
 
 It never commits to `main`. Merging the pull request is the human gate, and the
@@ -119,11 +123,36 @@ page, but "the page was fetched" is not "the page says what this draft claims".
 - The whole batch is wrong: close the pull request. Nothing was published. The
   branch can be deleted.
 
-A draft the model could not verify against a fetched source is marked
-**UNVERIFIED** in the pull request title, in the pull request body, and in the
-body of the `.md` file itself. That last one is deliberate: if an unverified item
-is merged without being checked, the word UNVERIFIED appears on the live site,
-which is a visible failure rather than a silent one.
+Everything in a pull request was drafted from a page the run actually opened and
+read. If the drafting pass could not retrieve the source, the item is discarded
+and never becomes a file, so there is nothing in a pull request that you could
+merge without a source behind it. `buildMarkdown` in the script throws rather
+than writing an unverified item, so a later change cannot quietly reopen that
+path.
+
+The cost of this is real and worth naming: occasionally a genuine story will be
+dropped because a site blocked the fetch. The run log records what was
+discarded and why, so you can look there if a week seems unusually quiet and
+write the item up by hand.
+
+## What counts as news here
+
+Research funding is out of scope. A grant, award, or contract to a Georgia
+institution is not a news item for this site, however large the figure. Money
+changing hands is not a finding and it is not education. A funded project
+becomes reportable when there is a result to explain.
+
+This exclusion does more work than it appears to. Georgia universities publish
+grant announcements constantly, and they are well written, locally relevant, and
+easy to verify, which makes them exactly the kind of item that would crowd out
+scarcer education stories in every run.
+
+Student scholarships are a different matter and remain in scope. The distinction
+is who receives the money: students, yes; researchers and institutions, no.
+
+The rule is enforced twice, once in the curation search and again after the
+source page has been read, since a headline does not always reveal that a story
+is an award announcement.
 
 ## Cost
 
@@ -154,6 +183,7 @@ or more. Nothing here depends on exact timing.
 | Run fails at "Curate and draft" with a 401 | The `ANTHROPIC_API_KEY` secret is missing, misspelled, or revoked. |
 | Run fails at "Verify the site still builds" | A draft violated the schema in a way validation did not catch. Read the build log, then tighten the validation in `scripts/curate-news.mjs`. No pull request is opened, so nothing reached review. |
 | Run succeeds, no pull request | Nothing cleared the bar. Read the run Summary to see what was searched and dropped. This is normal on quiet weeks. |
+| A story you know about never appears | It may have been discarded as unverifiable or as a funding announcement. Open the run in the Actions tab and read the log of the "Curate and draft" step, which lists every dropped item and the reason. |
 | Pull request opens but no email arrives | Check the default notification email at `github.com/settings/notifications`. The pull request mentions and assigns you, so a missing email is an address or delivery problem, not a Watch setting. |
 | The same story appears twice | The second appearance used a different URL and a different headline. Add the URL to the item on the site, or close the duplicate. |
 
@@ -165,3 +195,6 @@ or more. Nothing here depends on exact timing.
 - It does not pad to fill a quota. Zero items is a valid and expected result.
 - It does not assert that a draft is true. It asserts that a page was fetched and
   that these lines appeared on it. The reviewer supplies the judgment.
+- It does not draft an item it could not read the source for. Earlier versions
+  wrote such items with an UNVERIFIED banner. That was wrong: an item nobody can
+  verify should not sit in a pull request one tap away from publication.
