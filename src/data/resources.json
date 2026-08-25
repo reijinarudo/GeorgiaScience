@@ -9,6 +9,8 @@
           "name": "National Science Teaching Association (NSTA)",
           "url": "https://www.nsta.org/",
           "audience": "Educators",
+          "initials": "NSTA",
+          "logo": "/logos/nsta.png",
           "description": "Professional organization for science teachers, with classroom resources, standards guidance, and professional development.",
           "rationale": "A primary national source for vetted, standards-aligned science teaching materials."
         },
@@ -16,6 +18,8 @@
           "name": "National Center for Science Education (NCSE)",
           "url": "https://ncse.ngo/",
           "audience": "Educators, communities",
+          "initials": "NCSE",
+          "logo": "/logos/ncse.png",
           "description": "Defends the integrity of science education, with resources on teaching evolution and climate change accurately.",
           "rationale": "Directly supports integrity in how science is taught, a core part of our mission."
         }
@@ -30,6 +34,8 @@
           "name": "Georgia Department of Education, Science",
           "url": "https://www.georgiastandards.org/Georgia-Standards/Pages/Science.aspx",
           "audience": "Educators, students",
+          "initials": "GaDOE",
+          "logo": "/logos/gadoe.png",
           "description": "Official Georgia Standards of Excellence for science, plus state curriculum guidance.",
           "rationale": "The authoritative source for what Georgia students are expected to learn in science."
         },
@@ -37,8 +43,19 @@
           "name": "Georgia Science Teachers Association (GSTA)",
           "url": "https://www.georgiascienceteacher.org/",
           "audience": "Educators",
+          "initials": "GSTA",
+          "logo": "/logos/gsta.png",
           "description": "Statewide association supporting Georgia science teachers, with position statements and professional resources.",
           "rationale": "A Georgia-based professional voice for rigorous, evidence-based science instruction."
+        },
+        {
+          "name": "GeorgiasFossils.com",
+          "url": "https://www.georgiasfossils.com/",
+          "audience": "Educators, students, communities",
+          "initials": "GaF",
+          "logo": "/logos/gafossils.png",
+          "description": "A reference site built over twelve years cataloging Georgia's fossil record and geologic history, organized by period and by county, from Cambrian trilobites in the northwest to Eocene whales on the Coastal Plain. Its stated focus is evolution and geologic time. The site includes a section of presentations and reference material prepared for Georgia classrooms, and much of the content has been reviewed or contributed by working paleontologists. An associated Facebook group connects amateur collectors with professionals who help identify finds submitted by the public.",
+          "rationale": "It ties evolution and deep time to specific Georgia localities, which gives students and teachers evidence they can place in their own county rather than an abstraction from a textbook."
         }
       ]
     },
@@ -51,6 +68,8 @@
           "name": "NASA STEM Engagement",
           "url": "https://www.nasa.gov/learning-resources/",
           "audience": "Educators, students",
+          "initials": "NASA",
+          "logo": "/logos/nasa.png",
           "description": "Free, standards-aligned STEM lessons, activities, and multimedia from NASA.",
           "rationale": "High-quality, freely available classroom materials from a primary scientific institution."
         }
@@ -65,8 +84,35 @@
           "name": "Khan Academy, Science",
           "url": "https://www.khanacademy.org/science",
           "audience": "Students",
+          "initials": "KA",
+          "logo": "/logos/khan.png",
           "description": "Free video lessons and practice across biology, chemistry, physics, and more.",
           "rationale": "Widely used, free, and well-structured for self-paced study and clarification."
+        }
+      ]
+    },
+    {
+      "id": "robotics",
+      "title": "Robotics and hands-on STEM",
+      "blurb": "Programs and resources that put engineering, coding, and problem solving into students' hands.",
+      "items": [
+        {
+          "name": "GeorgiaFIRST Robotics",
+          "url": "https://gafirst.org/",
+          "audience": "Students, educators",
+          "initials": "FIRST",
+          "logo": "/logos/gafirst.png",
+          "description": "The statewide FIRST Robotics affiliate, running FIRST LEGO League, FIRST Tech Challenge, and FIRST Robotics Competition programs for students from elementary through high school, with events, team support, and mentoring pathways.",
+          "rationale": "The most established route into competitive robotics in Georgia, with reach into rural and Title I schools where hands-on engineering is otherwise hard to access."
+        },
+        {
+          "name": "The Finley Robotics Initiative",
+          "url": "https://accesstorobotics.org/",
+          "audience": "Students, educators",
+          "initials": "FR",
+          "logo": "/logos/finley.png",
+          "description": "An Atlanta-based scholarship program for students in grades 9 through 11 who do not otherwise have access to robotics hardware. Selected scholars receive a Reachy Mini robot to keep, monthly mentorship sessions with engineers and educators, and a cohort that documents its work publicly. The Initiative also publishes a free self-paced course on evaluating AI output, AI-Epistemic Resilience. It is founded and run by a member of this organization.",
+          "rationale": "Hardware and sustained mentorship are the two things most often missing where interest in engineering already exists, and this addresses both directly for Georgia students. The AI literacy course overlaps with the evidence-evaluation work in the section below."
         }
       ]
     },
@@ -79,6 +125,8 @@
           "name": "News Literacy Project",
           "url": "https://newslit.org/",
           "audience": "Students, educators, communities",
+          "initials": "NLP",
+          "logo": "/logos/nlp.png",
           "description": "Nonpartisan tools and lessons for telling credible information from misinformation.",
           "rationale": "Supports the evidence-evaluation skills at the heart of scientific literacy."
         }
