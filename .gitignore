@@ -1,0 +1,15 @@
+# Build output
+dist/
+.astro/
+
+# Dependencies
+node_modules/
+
+# Scratch files written by the news curation workflow
+pr-body.md
+pending-items.txt
+
+# Local environment
+.env
+.env.*
+.DS_Store
