@@ -1,0 +1,40 @@
+# Build check for pull requests.
+#
+# The news collection schema is enforced at build time, so a bad category or a
+# malformed date fails the build rather than shipping. This workflow runs that
+# build on every pull request, including after edits made in the GitHub web
+# editor, so a broken draft is caught on the pull request instead of after the
+# merge.
+
+name: Build check
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the site
+        run: npm run build
