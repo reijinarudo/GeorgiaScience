@@ -156,6 +156,43 @@ The rule is enforced twice, once in the curation search and again after the
 source page has been read, since a headline does not always reveal that a story
 is an award announcement.
 
+## Why an item might be missing
+
+If the site looks emptier than Georgia's actual activity, the cause is usually a
+constraint here rather than a lack of news. Early runs dropped the GSTA science
+literacy initiative and Georgia Tech's CEISMC summer programs for having no dated
+announcement inside the window, which is a newsroom rule applied to a site that
+is not a newsroom.
+
+Two things address that. The window defaults to 90 days rather than 45. And a
+`resource` item, a program, tool, competition, curriculum, or scholarship someone
+can actually use, qualifies on being current and useful rather than newly
+announced. Its date still has to come from the source: a program or application
+start, a stated deadline, or the page's own publication date. A page with no date
+anywhere is dropped rather than given an invented one.
+
+An occasional empty week is correct behaviour and better than filler. Three empty
+weeks in a row means the settings are wrong, not that Georgia went quiet.
+
+## What the reviewer is and is not shown
+
+Every factual assertion in a draft is supposed to appear in the pull request
+checklist with a verbatim quote behind it. An early run broke this: the model
+added a sentence of background from its own knowledge describing which grades and
+subjects Georgia Milestones covers. The sentence was wrong, and because the model
+never listed it as a claim, it was the one sentence the checklist did not cover.
+It reached the reviewer unverified inside an item that otherwise looked fully
+verified.
+
+Two changes guard against a repeat. The drafting instructions forbid background
+that is not on the page, in any form, however harmless it seems. And the script
+checks every number in the title, summary, and body against the numbers appearing
+in the claims and their quotes, flagging any that appear nowhere. That check would
+have caught "grades 3 through 8".
+
+The flag is a warning shown in the pull request, not a rejection. Treat a draft
+carrying one as needing a closer read.
+
 ## Sources, and why the link is not always the origin
 
 The source recorded on an item is always a page the run actually opened and
@@ -195,7 +232,7 @@ after a few runs rather than trusting this estimate.
 | --- | --- |
 | Cadence | The `cron` line in `news-curation.yml`. It is UTC. `0 11 * * 1` is Monday 07:00 in Georgia during daylight saving time and 06:00 during standard time. |
 | Maximum items per run | `NEWS_MAX_ITEMS` in `news-curation.yml`, currently 3. |
-| How far back to search | `NEWS_LOOKBACK_DAYS`, currently 45. |
+| How far back to search | `NEWS_LOOKBACK_DAYS`, currently 90. |
 | Model | `NEWS_MODEL`, currently `claude-sonnet-5`. |
 | Search targets, scope rules, house style | The `SCOPE_RULES`, `STYLE_RULES`, and prompt text in `scripts/curate-news.mjs`. |
 
