@@ -77,6 +77,12 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function daysAhead(n) {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
 function daysAgo(n) {
   const d = new Date();
   d.setUTCDate(d.getUTCDate() - n);
@@ -217,17 +223,9 @@ async function loadPending(state) {
 
 /* --------------------------------------------------------------- api call */
 
-async function callAnthropic({ system, userText, tools, maxTokens = 8000 }) {
+async function postOnce(body) {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error('ANTHROPIC_API_KEY is not set.');
-
-  const body = {
-    model: MODEL,
-    max_tokens: maxTokens,
-    system,
-    tools,
-    messages: [{ role: 'user', content: userText }],
-  };
 
   let lastError;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
@@ -248,14 +246,7 @@ async function callAnthropic({ system, userText, tools, maxTokens = 8000 }) {
       continue;
     }
 
-    if (res.ok) {
-      const data = await res.json();
-      const text = (data.content || [])
-        .filter((b) => b.type === 'text')
-        .map((b) => b.text)
-        .join('\n');
-      return { text, usage: data.usage || {}, stopReason: data.stop_reason };
-    }
+    if (res.ok) return res.json();
 
     const detail = await res.text();
     lastError = new Error('Anthropic API ' + res.status + ': ' + detail.slice(0, 500));
@@ -264,6 +255,40 @@ async function callAnthropic({ system, userText, tools, maxTokens = 8000 }) {
     await sleep(attempt * 10000);
   }
   throw lastError;
+}
+
+/**
+ * Server-side tools (web_search, web_fetch) run inside the API call. When the
+ * server's tool loop runs long, the API stops with stop_reason "pause_turn" and
+ * no final answer yet. The request has to be sent again with the partial
+ * assistant turn appended so the model can finish. Without this, a long fetch
+ * returns an empty answer and the item fails with "No parsable JSON".
+ */
+async function callAnthropic({ system, userText, tools, maxTokens = 8000 }) {
+  const messages = [{ role: 'user', content: userText }];
+  const usage = { input_tokens: 0, output_tokens: 0 };
+  const MAX_CONTINUATIONS = 4;
+
+  for (let turn = 0; turn <= MAX_CONTINUATIONS; turn += 1) {
+    const data = await postOnce({ model: MODEL, max_tokens: maxTokens, system, tools, messages });
+    usage.input_tokens += (data.usage && data.usage.input_tokens) || 0;
+    usage.output_tokens += (data.usage && data.usage.output_tokens) || 0;
+
+    if (data.stop_reason === 'pause_turn') {
+      messages.push({ role: 'assistant', content: data.content || [] });
+      continue;
+    }
+
+    const text = (data.content || [])
+      .filter((b) => b.type === 'text')
+      .map((b) => b.text)
+      .join('\n');
+    if (!text.trim()) {
+      throw new Error('empty answer from the model (stop_reason ' + data.stop_reason + ')');
+    }
+    return { text, usage, stopReason: data.stop_reason };
+  }
+  throw new Error('model did not finish after ' + MAX_CONTINUATIONS + ' continuations');
 }
 
 function sleep(ms) {
@@ -412,6 +437,13 @@ better than a thin or recycled one. Never pad the list to reach a quota.`;
 science literacy news published or announced between ${daysAgo(LOOKBACK_DAYS)}
 and ${today()}.
 
+Upcoming events are the exception to that window. A science fair, competition,
+teacher workshop, or public science event in Georgia that takes place between
+${today()} and ${daysAhead(120)} qualifies whenever it was announced, as long as
+the page is from the last year. These serve readers directly, so look for them
+deliberately. For such an event, eventDate is the date the page was published
+or last updated, and the event's own date goes in the headline or whyItFits.
+
 Run several distinct searches rather than one broad one. Vary the terms across
 scholarships, STEM grants and funding, science standards and policy, science
 fairs and educator events, and research findings from Georgia institutions that
@@ -558,7 +590,10 @@ Category meanings, applied strictly:
   a project that has merely been funded, announced, or begun. A study of how AI
   affects learning or the education system is discovery.
 - policy: standards, law, or an official decision.
-- event: a dated happening.
+- event: a dated happening. For an upcoming event, "date" is the date the page
+  was published or last updated, so the item does not sit pinned at the top of
+  the news list until the event arrives. State the event's own date in the body,
+  with a claim and quote for it like any other fact.
 - resource: a program, tool, or material that a student, teacher, or member of
   the public can actually use.
 Use exactly one of the five values.
