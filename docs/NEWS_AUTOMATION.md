@@ -156,6 +156,31 @@ The rule is enforced twice, once in the curation search and again after the
 source page has been read, since a headline does not always reveal that a story
 is an award announcement.
 
+## AI in education, a secondary topic
+
+Science education in Georgia schools is the primary focus of every run. AI in
+education is a second, smaller topic covering three kinds of item: laws and
+official policy on AI in Georgia schools and colleges (category `policy`),
+studies of how AI affects learning or the education system in either direction
+(category `discovery`), and AI literacy programs Georgia students or teachers
+can use (category `resource`).
+
+The run spends at most three of its searches on AI and keeps at most one AI
+item per run. The cap is enforced in the script as well as the prompt, so the
+model cannot talk its way past it. Extra AI candidates are dropped and listed in
+the run log with the reason.
+
+Studies carry extra drafting rules: report what was measured and who was
+studied, do not generalize past that population, do not turn an association
+into a cause, and name the funder when the page does. A study run or paid for by
+a company selling the AI product being studied is treated as marketing and
+dropped. Opinion and prediction pieces with no finding, law, or usable resource
+behind them are out of scope.
+
+Each item in the pull request is labelled "Science education" or "AI in
+education" next to its category, so the balance of a batch is visible at a
+glance.
+
 ## Why an item might be missing
 
 If the site looks emptier than Georgia's actual activity, the cause is usually a
@@ -233,6 +258,7 @@ after a few runs rather than trusting this estimate.
 | Cadence | The `cron` line in `news-curation.yml`. It is UTC. `0 11 * * 1` is Monday 07:00 in Georgia during daylight saving time and 06:00 during standard time. |
 | Maximum items per run | `NEWS_MAX_ITEMS` in `news-curation.yml`, currently 3. |
 | How far back to search | `NEWS_LOOKBACK_DAYS`, currently 90. |
+| AI in education items per run | `NEWS_AI_MAX_ITEMS`, default 1 in the script. Set 0 to switch the topic off, 2 at most. |
 | Model | `NEWS_MODEL`, currently `claude-sonnet-5`. |
 | Search targets, scope rules, house style | The `SCOPE_RULES`, `STYLE_RULES`, and prompt text in `scripts/curate-news.mjs`. |
 
