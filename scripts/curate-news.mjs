@@ -29,7 +29,8 @@
  *   ANTHROPIC_API_KEY   required
  *   NEWS_MODEL          default claude-sonnet-5
  *   NEWS_MAX_ITEMS      default 3
- *   NEWS_LOOKBACK_DAYS  default 45
+ *   NEWS_LOOKBACK_DAYS  default 90
+ *   NEWS_AI_MAX_ITEMS   default 1, cap on AI-in-education items per run
  *   NEWS_PENDING_FILE   optional, lines harvested from open automation PRs
  *   NEWS_PR_BODY_FILE   default pr-body.md
  *   NEWS_DRY_RUN        "true" to skip writing .md files
@@ -52,6 +53,11 @@ const CATEGORIES = ['scholarship', 'discovery', 'policy', 'event', 'resource'];
 const MODEL = process.env.NEWS_MODEL || 'claude-sonnet-5';
 const MAX_ITEMS = clampInt(process.env.NEWS_MAX_ITEMS, 3, 1, 5);
 const LOOKBACK_DAYS = clampInt(process.env.NEWS_LOOKBACK_DAYS, 90, 7, 365);
+// AI in education is a secondary topic. Georgia science education keeps the
+// majority of every run, so AI items are capped here in code as well as in the
+// prompt. The model ranks; this line enforces.
+const AI_MAX_ITEMS = clampInt(process.env.NEWS_AI_MAX_ITEMS, 1, 0, 2);
+const TOPICS = ['science-education', 'ai-education'];
 const PR_BODY_FILE = process.env.NEWS_PR_BODY_FILE || 'pr-body.md';
 // GitHub handle to @mention at the top of the pull request. A mention notifies
 // under the default "Participating and @mentions" setting, so the notification
@@ -284,6 +290,13 @@ function extractJson(text) {
 /* ----------------------------------------------------------- phase 1 */
 
 const SCOPE_RULES = `
+PRIORITY. Science education in Georgia schools is the primary focus of this
+site: what is taught in Georgia science classrooms, how it is taught, assessed,
+and resourced, and what Georgia students and science teachers can use. Most of
+every run belongs to this. AI in education is a second, smaller topic, described
+below. When a science education item and an AI item compete for a slot, the
+science education item wins unless it is clearly weaker.
+
 INCLUDE:
 - Georgia science education and scientific literacy at any level, K-12, higher
   education, and public understanding.
@@ -300,6 +313,20 @@ INCLUDE:
   something from.
 - Programs, tools, curricula, competitions, scholarships, and materials that
   Georgia students, teachers, or members of the public can actually use.
+- AI in education, as a secondary topic, in three kinds:
+  1. Laws and official policy on AI in schools and colleges. Georgia
+     legislation, State Board of Education and GaDOE guidance, University
+     System of Georgia and Technical College System of Georgia policy, district
+     policy, and federal law or guidance that applies to Georgia schools.
+  2. Studies of how AI affects learning, teaching, or the education system,
+     whether the findings show benefit, harm, or no effect. Report findings in
+     whichever direction they point; do not favour one direction. Prefer
+     studies from Georgia institutions or with Georgia students and schools.
+     Studies from elsewhere qualify only when they are peer reviewed or come
+     from a university, government agency, or independent research
+     organization, and they report an actual result.
+  3. AI literacy programs and training that Georgia students or teachers can
+     use, treated as resource items.
 
 Reputable Georgia institutions include the Georgia Department of Education, UGA,
 Georgia Tech and its CEISMC, Georgia State, Emory, the University System of
@@ -324,6 +351,12 @@ EXCLUDE, without exception:
   hands is not a finding, and it is not education. Report a research project
   only when there is an actual result to explain. A press release announcing
   that work will begin is the clearest example of what to drop.
+- AI vendor material. A company announcing its education product, a study or
+  survey run or paid for by a company selling AI tools to schools, and
+  sponsored "report" pages are marketing. Drop them, or if an independent
+  study covers the same question, use that instead.
+- AI opinion, prediction, and commentary pieces with no finding, law, or usable
+  resource behind them. "AI will transform classrooms" is not news.
 - Conflict framing introduced by an aggregator or an AI overview. If the only
   "news" is a summary dressing a development up as a fight, report the underlying
   development plainly or drop the item.
@@ -387,6 +420,13 @@ Georgia Tech, Georgia State, Emory, the University System of Georgia, the
 Georgia Science Teachers Association, and official scholarship and STEM funding
 program pages.
 
+Spend most of your searches on Georgia science education in schools. Then use
+no more than three searches on AI in education: Georgia laws and official
+policy on AI in schools, studies of AI's effects on learning or on the
+education system, and AI literacy programs for Georgia students or teachers.
+Return at most ${AI_MAX_ITEMS} AI in education candidate(s), and only if it
+clears the same bar as everything else.
+
 Already published on the site, do not return these or any restatement of them:
 ${recent || '(nothing published yet)'}
 
@@ -404,19 +444,23 @@ Respond with one JSON object and nothing else, in a \`\`\`json fence:
   "originalAnnouncementUrl": "the institution's own page if you used a different source, otherwise null",
   "originalAnnouncementName": "the institution's name if the field above is set, otherwise null",
       "category": "scholarship | discovery | policy | event | resource",
+      "topic": "science-education | ai-education",
       "eventDate": "YYYY-MM-DD, the date of the event or announcement",
       "location": "City or region, Georgia, or null if genuinely unknown",
       "whyItFits": "one line tying it to Georgia science education or literacy",
-      "watchFor": "a caveat to check, or null"
+      "watchFor": "a caveat to check, or null. For a study, name who funded or ran it if the page says"
     }
   ],
   "notes": "one or two sentences on what you searched and why anything was dropped"
 }
 
 The category must be exactly one of the five listed values. If an item does not
-fit one of them, drop the item rather than approximating.`;
+fit one of them, drop the item rather than approximating. A law or official
+policy on AI is policy, a study of AI's effects is discovery, and an AI literacy
+program is resource. The topic must be exactly science-education or
+ai-education.`;
 
-  const tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 10 }];
+  const tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 12 }];
   const res = await callAnthropic({ system, userText, tools, maxTokens: 8000 });
   const parsed = extractJson(res.text);
   return {
@@ -461,6 +505,7 @@ Primary source: ${candidate.sourceUrl}
 Suggested source name: ${candidate.sourceName || '(unknown)'}
 Suggested category: ${candidate.category}
 Suggested event date: ${candidate.eventDate || '(unknown)'}
+Topic: ${candidate.topic || 'science-education'}
 
 Fetch that URL and read it first.
 
@@ -510,12 +555,26 @@ Category meanings, applied strictly:
 - scholarship: funding awarded to students. Not funding awarded to researchers
   or institutions, which is out of scope entirely.
 - discovery: a research finding that has been made and can be explained. Never
-  a project that has merely been funded, announced, or begun.
+  a project that has merely been funded, announced, or begun. A study of how AI
+  affects learning or the education system is discovery.
 - policy: standards, law, or an official decision.
 - event: a dated happening.
 - resource: a program, tool, or material that a student, teacher, or member of
   the public can actually use.
 Use exactly one of the five values.
+
+If the item reports a study, of AI or anything else:
+- State what was measured and who was studied, using only what the page says.
+  Include the sample size and setting if the page gives them.
+- Do not generalize beyond the people and setting studied. A result from
+  college students is not a result about high school students.
+- Do not turn an association into a cause. If the page reports a correlation,
+  write that it is associated with, not that it causes.
+- If the page names limitations, include the main one. If it names none, do not
+  invent any.
+- If the page says who funded or conducted the study, name them in the body.
+  Set "inScope" to false if the study was run or paid for by a company selling
+  the AI product being studied.
 
 Set "inScope" to false if, now that you have read the page, it turns out to be a
 funding, grant, award, or contract announcement rather than a finding, an
@@ -744,7 +803,9 @@ function buildPrBody(results, meta) {
     out.push('`' + r.file + '`');
     out.push('');
     out.push(
-      'Category `' + it.category + '`  |  Date ' + it.date + (it.location ? '  |  ' + it.location : '')
+      'Category `' + it.category + '`  |  ' +
+        (it.topic === 'ai-education' ? 'AI in education' : 'Science education') +
+        '  |  Date ' + it.date + (it.location ? '  |  ' + it.location : '')
     );
     out.push('');
     out.push('Source: [' + it.sourceName + '](' + it.source + ')');
@@ -830,7 +891,25 @@ async function main() {
   const results = [];
   const usedSlugs = new Set(published.slugs);
 
-  for (const candidate of candidates.slice(0, MAX_ITEMS)) {
+  // Enforce the AI cap in code. Candidates arrive ranked, strongest first, so
+  // the first AI items within the cap are kept and later ones are dropped and
+  // logged. An unrecognised topic is treated as science education.
+  let aiSeen = 0;
+  const capped = [];
+  for (const c of candidates) {
+    c.topic = TOPICS.includes(c.topic) ? c.topic : 'science-education';
+    if (c.topic === 'ai-education' && ++aiSeen > AI_MAX_ITEMS) {
+      results.push({
+        kept: false,
+        headline: c.headline || c.sourceUrl || 'untitled',
+        reason: 'over the AI in education cap of ' + AI_MAX_ITEMS + ' per run',
+      });
+      continue;
+    }
+    capped.push(c);
+  }
+
+  for (const candidate of capped.slice(0, MAX_ITEMS)) {
     const headline = candidate.headline || candidate.sourceUrl || 'untitled';
 
     if (!candidate.sourceUrl) {
@@ -862,6 +941,7 @@ async function main() {
     }
 
     const item = checked.item;
+    item.topic = candidate.topic;
 
     // Two gates, both applied after the page was read. Neither is surfaced in
     // the pull request body: an item that fails here is not a candidate the
