@@ -22,6 +22,15 @@
           "logo": "/logos/ncse.png",
           "description": "Defends the integrity of science education, with resources on teaching evolution and climate change accurately.",
           "rationale": "Directly supports integrity in how science is taught, a core part of our mission."
+        },
+        {
+          "name": "ScienceSaves",
+          "url": "https://sciencesaves.org/",
+          "audience": "Educators, students, communities",
+          "initials": "SS",
+          "logo": "/logos/sciencesaves.png",
+          "description": "A nonpartisan campaign from the Center for Inquiry that shares real stories of how science improves lives, from medicine and public health to climate solutions. Its free K-12 lessons include lesson plans, slide presentations, teacher notes, student response sheets, and rubrics.",
+          "rationale": "Students connect science to outcomes they and their families have lived through, which builds the appreciation for evidence that scientific literacy depends on. The lessons are free and ready for classroom use."
         }
       ]
     },
