@@ -5,9 +5,13 @@
  * Runs on a schedule from .github/workflows/news-curation.yml. It does two
  * things, mirroring the two phases of the manual curation skill:
  *
- *   1. CURATION. One Anthropic API call with the server-side web_search tool
- *      that looks for Georgia science education and science literacy news and
- *      returns a candidate list.
+ *   1. CURATION. Two Anthropic API calls with the server-side web_search
+ *      tool. The general pass looks for Georgia science education and science
+ *      literacy news. The policy pass looks only for STEM education policy
+ *      decisions affecting Georgia, from the bodies that make them and the
+ *      outlets that report them, and fills reserved slots. Without the second
+ *      pass, policy competes with university research press releases for the
+ *      same few slots and loses almost every week.
  *   2. DRAFTING. One call per candidate with the server-side web_fetch tool.
  *      The model must read the primary source before drafting, and must report
  *      which specific claims the source actually supports, with quotes.
@@ -31,6 +35,8 @@
  *   NEWS_MAX_ITEMS      default 3
  *   NEWS_LOOKBACK_DAYS  default 90
  *   NEWS_AI_MAX_ITEMS   default 1, cap on AI-in-education items per run
+ *   NEWS_POLICY_SLOTS   default 1, slots reserved for the dedicated policy pass
+ *   NEWS_POLICY_LOOKBACK_DAYS  default 120, search window for the policy pass
  *   NEWS_PENDING_FILE   optional, lines harvested from open automation PRs
  *   NEWS_PR_BODY_FILE   default pr-body.md
  *   NEWS_DRY_RUN        "true" to skip writing .md files
@@ -58,6 +64,11 @@ const LOOKBACK_DAYS = clampInt(process.env.NEWS_LOOKBACK_DAYS, 90, 7, 365);
 // prompt. The model ranks; this line enforces.
 const AI_MAX_ITEMS = clampInt(process.env.NEWS_AI_MAX_ITEMS, 1, 0, 2);
 const TOPICS = ['science-education', 'ai-education'];
+// Policy gets its own curation pass and reserved slots. A reserved slot that
+// the policy pass cannot fill goes back to the general pass, so a quiet policy
+// week costs nothing.
+const POLICY_SLOTS = clampInt(process.env.NEWS_POLICY_SLOTS, 1, 0, 3);
+const POLICY_LOOKBACK_DAYS = clampInt(process.env.NEWS_POLICY_LOOKBACK_DAYS, 120, 30, 365);
 const PR_BODY_FILE = process.env.NEWS_PR_BODY_FILE || 'pr-body.md';
 // GitHub handle to @mention at the top of the pull request. A mention notifies
 // under the default "Participating and @mentions" setting, so the notification
@@ -325,11 +336,17 @@ science education item wins unless it is clearly weaker.
 INCLUDE:
 - Georgia science education and scientific literacy at any level, K-12, higher
   education, and public understanding.
-- Policy and administrative decisions that affect how science is taught, funded,
-  assessed, or resourced in Georgia. Standards adoption, curriculum decisions,
-  assessment changes, appropriations that change classroom capacity, state board
-  actions, and legislation. The intersection of policy and the quality of science
-  education is a priority for this site.
+- Policy and administrative decisions that affect how science and the other
+  STEM subjects are taught, funded, assessed, or staffed in Georgia. STEM here
+  means science, mathematics, computer science, engineering and technology, and
+  AI in education. Standards adoption, curriculum decisions, assessment changes,
+  appropriations and budget changes that alter classroom capacity, federal
+  funding changes and grant terminations that reach Georgia schools or teacher
+  programs, teacher certification and endorsement rules, STEM teacher workforce
+  decisions, State Board of Education and Professional Standards Commission
+  actions, state audits, district policy, and legislation, including bills
+  signed into law and legislative study committees. The intersection of policy
+  and the quality of science education is a priority for this site.
 - Health and medical science that bears on public understanding in Georgia,
   including public health decisions and communication.
 - Technology, computing, engineering, and robotics education, including
@@ -375,7 +392,10 @@ EXCLUDE, without exception:
   this site, however large the figure or prestigious the funder. Money changing
   hands is not a finding, and it is not education. Report a research project
   only when there is an actual result to explain. A press release announcing
-  that work will begin is the clearest example of what to drop.
+  that work will begin is the clearest example of what to drop. This exclusion
+  covers awards only. A public budget decision, an appropriation, a funding cut,
+  or a grant termination that changes what Georgia classrooms or teacher
+  programs can do is a policy item and is in scope.
 - AI vendor material. A company announcing its education product, a study or
   survey run or paid for by a company selling AI tools to schools, and
   sponsored "report" pages are marketing. Drop them, or if an independent
@@ -502,6 +522,103 @@ ai-education.`;
   };
 }
 
+/**
+ * Dedicated policy pass. It runs its own searches against the bodies that make
+ * Georgia education policy and the outlets that report it, so policy items do
+ * not have to outrank university research announcements to be found.
+ */
+async function curatePolicy(published) {
+  if (POLICY_SLOTS === 0) return { items: [], notes: '', usage: null };
+
+  const recent = published.list
+    .slice(0, 40)
+    .map((i) => '- ' + i.date + ' ' + i.title + ' (' + i.source + ')')
+    .join('\n');
+
+  const system = `You are the policy curation pass of the news workflow for
+GeorgiaScience.org, the public site of Georgia Citizens for Integrity in
+Science Education. The organization models the verification practices it
+teaches. Your job is to find candidate policy items, not to publish them.
+
+${SCOPE_RULES}
+
+For this pass, return only policy items: a decision, rule, law, budget action,
+audit, or official guidance that affects STEM education in Georgia. Research
+findings, events, scholarships, and programs belong to a different pass. Do not
+return them here.
+
+Quality bar: it is correct and expected to return zero items. Never pad.`;
+
+  const userText = `Today is ${today()}. Search for STEM education policy affecting
+Georgia that was decided, adopted, signed, published, or took effect between
+${daysAgo(POLICY_LOOKBACK_DAYS)} and ${today()}. A rule adopted earlier that
+takes effect inside that window also qualifies, dated by its effective date.
+
+Run several distinct searches. Cover these bodies:
+- Georgia State Board of Education meetings and rule adoptions
+- Georgia Professional Standards Commission rules, certification, and
+  endorsements, including STEM, STEAM, and AI endorsements
+- The Georgia General Assembly: bills signed, laws taking effect, and
+  legislative study committees on education or AI in schools
+- Governor's office education announcements and budget actions
+- Georgia Department of Audits and Accounts and the Governor's Office of
+  Student Achievement reports on schools
+- University System of Georgia and Technical College System of Georgia policy
+  on STEM teaching or AI
+- Large Georgia school district board decisions on STEM curriculum,
+  instructional materials, or AI
+- Federal funding changes and grant terminations reported as affecting Georgia
+  schools, teacher programs, or STEM education
+
+Search these outlets, which report policy in detail and can usually be read
+when the agency's own site cannot: PAGE legislative meeting reports
+(pagelegislative.org), Georgia Recorder, Capitol Beat, GPB News, WABE, The
+Atlanta Journal-Constitution education coverage, and the Georgia Budget and
+Policy Institute.
+
+Already published on the site, do not return these or any restatement of them:
+${recent || '(nothing published yet)'}
+
+Return at most ${POLICY_SLOTS + 1} candidates, fewer if fewer clear the bar, and
+zero if none do. Rank strongest first, preferring decisions that most directly
+change what happens in Georgia science and STEM classrooms.
+
+Respond with one JSON object and nothing else, in a \`\`\`json fence:
+
+{
+  "items": [
+    {
+      "headline": "plain statement of the decision and who made it",
+      "sourceUrl": "https://the-page-you-read",
+      "sourceName": "publication or institution, whichever page you actually read",
+      "originalAnnouncementUrl": "the official body's own page if you used a different source, otherwise null",
+      "originalAnnouncementName": "the official body's name if the field above is set, otherwise null",
+      "category": "policy",
+      "topic": "science-education | ai-education",
+      "eventDate": "YYYY-MM-DD, the date of the decision, signing, or effective date",
+      "location": "City or region, Georgia, or Statewide, Georgia, or null if genuinely unknown",
+      "whyItFits": "one line on how this affects STEM teaching or learning in Georgia",
+      "watchFor": "a caveat to check, or null"
+    }
+  ],
+  "notes": "one or two sentences on what you searched and why anything was dropped"
+}
+
+The category must be "policy". The topic must be exactly science-education or
+ai-education. Use science-education for every STEM policy item that is not
+about AI.`;
+
+  const tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 8 }];
+  const res = await callAnthropic({ system, userText, tools, maxTokens: 6000 });
+  const parsed = extractJson(res.text);
+  const items = (Array.isArray(parsed.items) ? parsed.items : []).map((c) => ({
+    ...c,
+    category: 'policy',
+    pass: 'policy',
+  }));
+  return { items, notes: parsed.notes || '', usage: res.usage };
+}
+
 /* ----------------------------------------------------------- phase 2 */
 
 async function draftItem(candidate) {
@@ -550,6 +667,11 @@ verify against that instead. Prefer in this order:
 2. A reputable Georgia news outlet reporting the story itself.
 3. A reputable outlet reprinting the announcement in full.
 
+For policy items, PAGE legislative meeting reports, Georgia Recorder, Capitol
+Beat, GPB News, WABE, and The Atlanta Journal-Constitution count as reputable
+Georgia outlets, and official agendas, minutes, rule text, and bill pages count
+as the institution's own announcement.
+
 Never fall back to an aggregator, a content farm, an AI generated summary, a
 social media post, or a site you cannot identify. If nothing readable and
 reputable exists, set verified to false and stop.
@@ -589,7 +711,9 @@ Category meanings, applied strictly:
 - discovery: a research finding that has been made and can be explained. Never
   a project that has merely been funded, announced, or begun. A study of how AI
   affects learning or the education system is discovery.
-- policy: standards, law, or an official decision.
+- policy: standards, law, or an official decision, including rules,
+  certification and endorsement changes, budget actions, audits, and official
+  guidance that affect STEM education in Georgia.
 - event: a dated happening. For an upcoming event, "date" is the date the page
   was published or last updated, so the item does not sit pinned at the top of
   the news list until the event arrives. State the event's own date in the body,
@@ -616,7 +740,9 @@ funding, grant, award, or contract announcement rather than a finding, an
 education story, a policy decision, an event, or a usable resource. Judge this
 from the page itself, not from the candidate description. An item marked out of
 scope is discarded, so err toward false when the page is mostly about money
-being awarded.
+being awarded to a researcher or institution. A public budget decision, an
+appropriation, a funding cut, or a grant termination affecting Georgia schools
+or teacher programs is a policy decision, and is in scope.
 
 "claims" must cover the whole draft, not a selection from it. Every factual
 assertion in your title, summary, and body needs an entry, including every
@@ -919,9 +1045,30 @@ async function main() {
   await loadPending(published);
   log('Known items: ' + published.urls.size + ' source URLs, ' + published.slugs.size + ' published files.');
 
-  const { items: candidates, notes } = await curate(published);
-  log('Curation returned ' + candidates.length + ' candidate(s).');
-  if (notes) log('Notes: ' + notes);
+  const policyRun = await curatePolicy(published);
+  log('Policy pass returned ' + policyRun.items.length + ' candidate(s).');
+  if (policyRun.notes) log('Policy notes: ' + policyRun.notes);
+
+  const generalRun = await curate(published);
+  log('General pass returned ' + generalRun.items.length + ' candidate(s).');
+  if (generalRun.notes) log('General notes: ' + generalRun.notes);
+
+  const notes = [
+    policyRun.notes ? 'Policy pass: ' + policyRun.notes : '',
+    generalRun.notes ? 'General pass: ' + generalRun.notes : '',
+  ].filter(Boolean).join(' ');
+
+  // Policy candidates go first and are all attempted, so a policy item that
+  // fails verification does not waste the reserved slot. Drafting stops once
+  // MAX_ITEMS have been kept.
+  const seenUrls = new Set();
+  const candidates = [];
+  for (const c of [...policyRun.items, ...generalRun.items]) {
+    const key = c.sourceUrl ? normalizeUrl(c.sourceUrl) : '';
+    if (key && seenUrls.has(key)) continue;
+    if (key) seenUrls.add(key);
+    candidates.push(c);
+  }
 
   const results = [];
   const usedSlugs = new Set(published.slugs);
@@ -933,7 +1080,10 @@ async function main() {
   const capped = [];
   for (const c of candidates) {
     c.topic = TOPICS.includes(c.topic) ? c.topic : 'science-education';
-    if (c.topic === 'ai-education' && ++aiSeen > AI_MAX_ITEMS) {
+    // AI policy found by the policy pass fills a policy slot and does not count
+    // against the AI cap, which exists to keep AI studies and programs from
+    // crowding out science education.
+    if (c.topic === 'ai-education' && c.pass !== 'policy' && ++aiSeen > AI_MAX_ITEMS) {
       results.push({
         kept: false,
         headline: c.headline || c.sourceUrl || 'untitled',
@@ -944,8 +1094,18 @@ async function main() {
     capped.push(c);
   }
 
-  for (const candidate of capped.slice(0, MAX_ITEMS)) {
+  // Drafting stops at MAX_ITEMS kept items. General candidates are limited to
+  // MAX_ITEMS attempts, as before. Policy candidates are tried first.
+  let keptCount = 0;
+  let generalTried = 0;
+  for (const candidate of capped) {
+    if (keptCount >= MAX_ITEMS) break;
+    if (candidate.pass !== 'policy' && ++generalTried > MAX_ITEMS) break;
     const headline = candidate.headline || candidate.sourceUrl || 'untitled';
+    // Policy discards are shown in the pull request, so a policy item lost to
+    // an unreadable agency site is visible to the reviewer and can be written
+    // up by hand.
+    const isPolicy = candidate.pass === 'policy';
 
     if (!candidate.sourceUrl) {
       results.push({ kept: false, headline, reason: 'no source URL returned' });
@@ -985,18 +1145,20 @@ async function main() {
     if (!item.verified) {
       results.push({
         kept: false,
-        silent: true,
+        silent: !isPolicy,
         headline,
-        reason: 'could not be verified against a fetched source, discarded',
+        reason: 'could not be verified against a fetched source, discarded' +
+          (isPolicy ? '. Policy item, consider writing it up by hand from ' + candidate.sourceUrl : ''),
       });
       continue;
     }
     if (!item.inScope) {
       results.push({
         kept: false,
-        silent: true,
+        silent: !isPolicy,
         headline,
-        reason: 'out of scope on reading the source, most likely a funding announcement',
+        reason: 'out of scope on reading the source, most likely a funding announcement' +
+          (isPolicy ? '. Policy item, check whether this judgement was right: ' + candidate.sourceUrl : ''),
       });
       continue;
     }
@@ -1019,6 +1181,7 @@ async function main() {
     log((DRY_RUN ? 'Would write ' : 'Wrote ') + file);
 
     results.push({ kept: true, headline, file, item, warnings: checked.warnings });
+    keptCount++;
   }
 
   const kept = results.filter((r) => r.kept);
