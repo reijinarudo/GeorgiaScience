@@ -543,7 +543,8 @@ teaches. Your job is to find candidate policy items, not to publish them.
 ${SCOPE_RULES}
 
 For this pass, return only policy items: a decision, rule, law, budget action,
-audit, or official guidance that affects STEM education in Georgia. Research
+audit, or official guidance that affects STEM education in Georgia. An audit or
+survey is returned with the category discovery, as described below. Research
 findings, events, scholarships, and programs belong to a different pass. Do not
 return them here.
 
@@ -593,9 +594,9 @@ Respond with one JSON object and nothing else, in a \`\`\`json fence:
       "sourceName": "publication or institution, whichever page you actually read",
       "originalAnnouncementUrl": "the official body's own page if you used a different source, otherwise null",
       "originalAnnouncementName": "the official body's name if the field above is set, otherwise null",
-      "category": "policy",
+      "category": "policy | discovery",
       "topic": "science-education | ai-education",
-      "eventDate": "YYYY-MM-DD, the date of the decision, signing, or effective date",
+      "eventDate": "YYYY-MM-DD, the date of the decision, signing, publication, or effective date",
       "location": "City or region, Georgia, or Statewide, Georgia, or null if genuinely unknown",
       "whyItFits": "one line on how this affects STEM teaching or learning in Georgia",
       "watchFor": "a caveat to check, or null"
@@ -604,16 +605,21 @@ Respond with one JSON object and nothing else, in a \`\`\`json fence:
   "notes": "one or two sentences on what you searched and why anything was dropped"
 }
 
-The category must be "policy". The topic must be exactly science-education or
-ai-education. Use science-education for every STEM policy item that is not
+The category must be exactly "policy" or "discovery". Use policy for a
+decision: a rule, law, budget action, or official guidance. Use discovery for an
+audit, survey, or study that reports findings, even when a state agency produced
+it, because what it reports is evidence, not a decision. The topic must be
+exactly science-education or ai-education. Use science-education for every STEM policy item that is not
 about AI.`;
 
   const tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 8 }];
   const res = await callAnthropic({ system, userText, tools, maxTokens: 6000 });
   const parsed = extractJson(res.text);
+  // The policy pass may return policy or discovery (an audit or study with
+  // findings). Anything else is treated as policy, the pass's default.
   const items = (Array.isArray(parsed.items) ? parsed.items : []).map((c) => ({
     ...c,
-    category: 'policy',
+    category: c.category === 'discovery' ? 'discovery' : 'policy',
     pass: 'policy',
   }));
   return { items, notes: parsed.notes || '', usage: res.usage };
@@ -712,8 +718,9 @@ Category meanings, applied strictly:
   a project that has merely been funded, announced, or begun. A study of how AI
   affects learning or the education system is discovery.
 - policy: standards, law, or an official decision, including rules,
-  certification and endorsement changes, budget actions, audits, and official
-  guidance that affect STEM education in Georgia.
+  certification and endorsement changes, budget actions, and official guidance
+  that affect STEM education in Georgia. An audit, survey, or study that
+  reports findings is discovery, even when a state agency produced it.
 - event: a dated happening. For an upcoming event, "date" is the date the page
   was published or last updated, so the item does not sit pinned at the top of
   the news list until the event arrives. State the event's own date in the body,
