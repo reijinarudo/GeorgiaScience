@@ -11,7 +11,9 @@
  *      decisions affecting Georgia, from the bodies that make them and the
  *      outlets that report them, and fills reserved slots. Without the second
  *      pass, policy competes with university research press releases for the
- *      same few slots and loses almost every week.
+ *      same few slots and loses almost every week. A third pass, the watch
+ *      pass, runs first. It looks for anti-science activity affecting Georgia
+ *      science education, newest first, and reads the tips file.
  *   2. DRAFTING. One call per candidate with the server-side web_fetch tool.
  *      The model must read the primary source before drafting, and must report
  *      which specific claims the source actually supports, with quotes.
@@ -37,6 +39,9 @@
  *   NEWS_AI_MAX_ITEMS   default 1, cap on AI-in-education items per run
  *   NEWS_POLICY_SLOTS   default 1, slots reserved for the dedicated policy pass
  *   NEWS_POLICY_LOOKBACK_DAYS  default 120, search window for the policy pass
+ *   NEWS_WATCH_SLOTS    default 1, slots reserved for the anti-science watch pass
+ *   NEWS_WATCH_LOOKBACK_DAYS  default 30, search window for the watch pass
+ *   NEWS_TIPS_FILE      default tips.txt, links Dr. Finley drops in as leads
  *   NEWS_PENDING_FILE   optional, lines harvested from open automation PRs
  *   NEWS_PR_BODY_FILE   default pr-body.md
  *   NEWS_DRY_RUN        "true" to skip writing .md files
@@ -69,6 +74,13 @@ const TOPICS = ['science-education', 'ai-education'];
 // week costs nothing.
 const POLICY_SLOTS = clampInt(process.env.NEWS_POLICY_SLOTS, 1, 0, 3);
 const POLICY_LOOKBACK_DAYS = clampInt(process.env.NEWS_POLICY_LOOKBACK_DAYS, 120, 30, 365);
+// The watch pass covers efforts to remove, weaken, or misrepresent established
+// science. It runs first, searches a short recent window, and reads the tips
+// file. Its reserved slot returns to the other passes when it finds nothing.
+const WATCH_SLOTS = clampInt(process.env.NEWS_WATCH_SLOTS, 1, 0, 3);
+const WATCH_LOOKBACK_DAYS = clampInt(process.env.NEWS_WATCH_LOOKBACK_DAYS, 30, 7, 120);
+const TIPS_FILE = process.env.NEWS_TIPS_FILE || 'tips.txt';
+const MAX_TIPS = 8;
 const PR_BODY_FILE = process.env.NEWS_PR_BODY_FILE || 'pr-body.md';
 // GitHub handle to @mention at the top of the pull request. A mention notifies
 // under the default "Participating and @mentions" setting, so the notification
@@ -197,7 +209,7 @@ function parseFrontmatter(text) {
  * a new campaign URL.
  */
 async function loadPublished() {
-  const state = { slugs: new Set(), urls: new Set(), titles: new Set(), list: [] };
+  const state = { slugs: new Set(), urls: new Set(), titles: new Set(), tips: new Set(), list: [] };
   if (!existsSync(NEWS_DIR)) return state;
   const files = (await readdir(NEWS_DIR)).filter((f) => /\.mdx?$/.test(f));
   for (const file of files) {
@@ -230,6 +242,32 @@ async function loadPending(state) {
     if (m[1] === 'source') state.urls.add(normalizeUrl(m[2]));
     else state.titles.add(normalizeTitle(m[2]));
   }
+}
+
+/**
+ * Tips are links Dr. Finley adds to tips.txt at the repository root, one per
+ * line, often from LinkedIn or other social posts. Lines starting with # are
+ * comments. A tip is a lead and never a source: the watch pass traces each one
+ * to a record a reader can open. Tips are never written into a published page.
+ * The pull request reminds the reviewer to remove a worked tip from the file,
+ * and the published-items list keeps the same story from being drafted twice.
+ */
+async function loadTips(state) {
+  const file = path.join(ROOT, TIPS_FILE);
+  if (!existsSync(file)) return [];
+  const raw = await readFile(file, 'utf8');
+  const tips = [];
+  for (const line of raw.split(/\r?\n/)) {
+    const t = line.trim();
+    if (!t || t.startsWith('#')) continue;
+    const m = /(https?:\/\/\S+)/.exec(t);
+    if (!m) continue;
+    const note = t.replace(m[1], '').trim();
+    if (state.tips.has(normalizeUrl(m[1])) || state.urls.has(normalizeUrl(m[1]))) continue;
+    tips.push({ url: m[1], note });
+    if (tips.length >= MAX_TIPS) break;
+  }
+  return tips;
 }
 
 /* --------------------------------------------------------------- api call */
@@ -329,7 +367,10 @@ const SCOPE_RULES = `
 PRIORITY. Science education in Georgia schools is the primary focus of this
 site: what is taught in Georgia science classrooms, how it is taught, assessed,
 and resourced, and what Georgia students and science teachers can use. Most of
-every run belongs to this. AI in education is a second, smaller topic, described
+every run belongs to this. Pushing back on anti-science is equally central. The
+organization grew out of the 2002 Cobb County evolution textbook sticker
+controversy, and reporting efforts to remove, weaken, or misrepresent
+established science in what Georgia students are taught is part of its mission. AI in education is a second, smaller topic, described
 below. When a science education item and an AI item compete for a slot, the
 science education item wins unless it is clearly weaker.
 
@@ -347,6 +388,19 @@ INCLUDE:
   actions, state audits, district policy, and legislation, including bills
   signed into law and legislative study committees. The intersection of policy
   and the quality of science education is a priority for this site.
+- Anti-science activity affecting Georgia science education, and correcting the
+  record on it. Efforts to stop or weaken the teaching of evolution, or to
+  present creationism or intelligent design as science. Denial or
+  misrepresentation of climate science by officials, in standards, or in
+  instructional materials. Religious or ideological instruction presented as
+  science in public schools. Health and vaccine misinformation reaching
+  students through schools or public agencies. Removal, censorship, or
+  disclaimers on accurate science materials. Political or special-interest
+  interference in science standards, textbooks, assessments, or teacher
+  preparation. This covers the state, districts, individual schools, teachers,
+  and individual officials in Georgia, and national or other-state
+  developments likely to reach Georgia classrooms, such as model legislation,
+  court rulings, and federal guidance. Report these whoever is responsible.
 - Health and medical science that bears on public understanding in Georgia,
   including public health decisions and communication.
 - Technology, computing, engineering, and robotics education, including
@@ -375,14 +429,15 @@ Georgia Tech and its CEISMC, Georgia State, Emory, the University System of
 Georgia, the Georgia Science Teachers Association, the Georgia Department of
 Public Health, regional STEM centers, and school districts.
 
-On policy items specifically. Report the decision, who made it, what the record
-says about its effects, and what remains unknown. Do not assign blame, do not use
-partisan framing, and do not characterise anyone's motives. A reader should be
-able to see what happened and reach their own conclusion. That is both the house
-standard and the harder version to dismiss.
+On policy and accountability items. Name who acted and what they did or said,
+and cite the record: bill text, votes, minutes, official statements, filings,
+or reputable reporting. When a claim about science is false or misleading, say
+so plainly and state what the scientific evidence and the relevant scientific
+bodies show, from a page you read. Quote people in their own words and describe
+their reasons only as the record shows them, so every sentence can be checked.
+Anti-science gets the same answer wherever it comes from.
 
 EXCLUDE, without exception:
-- Partisan political advocacy not about science education.
 - Vendor or marketing promotion. A company press release pushing its own product
   is marketing, not news, even when it mentions schools.
 - Unvetted or low quality sources.
@@ -402,15 +457,19 @@ EXCLUDE, without exception:
   study covers the same question, use that instead.
 - AI opinion, prediction, and commentary pieces with no finding, law, or usable
   resource behind them. "AI will transform classrooms" is not news.
-- Conflict framing introduced by an aggregator or an AI overview. If the only
-  "news" is a summary dressing a development up as a fight, report the underlying
-  development plainly or drop the item.
+- Aggregators, AI overviews, and social media posts as sources. They are leads.
+  Trace the development to the original record or to reputable reporting, and
+  report what that record shows.
 
 Reputable Georgia news outlets are pointers to a primary source, not the primary
 source themselves. Prefer the institution's own announcement page.
 
 Bias toward grades 8 to 12 relevance, but include clearly relevant items outside
 that band.
+
+RECENCY. Prefer what happened recently. When two items both clear the bar, the
+newer one ranks higher. A development from the last few weeks outranks a
+better-documented one from months ago.
 
 Not everything worth publishing is an event. A resource item, a program, tool,
 competition, curriculum, or scholarship that Georgia students, teachers, or the
@@ -483,7 +542,7 @@ Already published on the site, do not return these or any restatement of them:
 ${recent || '(nothing published yet)'}
 
 Return at most ${MAX_ITEMS} candidates, fewer if fewer clear the bar, and zero if
-none do. Rank strongest first.
+none do. Rank newest first among items that clear the bar.
 
 Respond with one JSON object and nothing else, in a \`\`\`json fence:
 
@@ -581,8 +640,8 @@ Already published on the site, do not return these or any restatement of them:
 ${recent || '(nothing published yet)'}
 
 Return at most ${POLICY_SLOTS + 1} candidates, fewer if fewer clear the bar, and
-zero if none do. Rank strongest first, preferring decisions that most directly
-change what happens in Georgia science and STEM classrooms.
+zero if none do. Rank newest first, then by how directly
+the decision changes what happens in Georgia science and STEM classrooms.
 
 Respond with one JSON object and nothing else, in a \`\`\`json fence:
 
@@ -621,6 +680,111 @@ about AI.`;
     ...c,
     category: c.category === 'discovery' ? 'discovery' : 'policy',
     pass: 'policy',
+  }));
+  return { items, notes: parsed.notes || '', usage: res.usage };
+}
+
+/**
+ * Watch pass. Looks for anti-science activity affecting Georgia science
+ * education in a short recent window, from the outlets and watchdogs that
+ * report it, and works every pending tip.
+ */
+async function curateWatch(published, tips) {
+  if (WATCH_SLOTS === 0 && tips.length === 0) return { items: [], notes: '', usage: null };
+
+  const recent = published.list
+    .slice(0, 40)
+    .map((i) => '- ' + i.date + ' ' + i.title + ' (' + i.source + ')')
+    .join('\n');
+  const tipText = tips.length
+    ? tips.map((t, i) => (i + 1) + '. ' + t.url + (t.note ? ' (note: ' + t.note + ')' : '')).join('\n')
+    : '(no tips this week)';
+
+  const system = `You are the watch pass of the news workflow for GeorgiaScience.org,
+the public site of Georgia Citizens for Integrity in Science Education. The
+organization exists to promote science, reason, and evidence in Georgia and to
+push back on anti-science. Your job is to find candidate items about efforts to
+remove, weaken, or misrepresent established science in what Georgia students and
+the public are taught, so the site can report them and correct the record. You
+do not publish.
+
+${SCOPE_RULES}
+
+Quality bar: every candidate must trace to a record a reader can open. It is
+correct to return zero items when nothing is found. Never pad.`;
+
+  const userText = `Today is ${today()}. Search for anti-science activity affecting
+Georgia science education between ${daysAgo(WATCH_LOOKBACK_DAYS)} and ${today()}.
+Newest first. This includes:
+
+- A Georgia district, school, or teacher dropping, weakening, or disclaiming
+  evolution, or presenting creationism or intelligent design as science
+- Georgia officials, candidates for education offices, or agencies denying or
+  misrepresenting climate science, or climate content being removed from
+  standards or materials
+- Religious or ideological instruction presented as science in Georgia public
+  schools, and bills or policies that would require it
+- Health or vaccine misinformation reaching Georgia students through schools,
+  school boards, or public agencies
+- Removal, censorship, or disclaimers on accurate science books and materials
+- Political or special-interest interference in Georgia science standards,
+  textbooks, assessments, or teacher preparation
+- National and other-state developments likely to reach Georgia classrooms:
+  model bills, federal guidance, court rulings, and similar laws passing in
+  neighboring states
+
+Search these, which report this kind of story: the National Center for Science
+Education (ncse.ngo), Americans United for Separation of Church and State, the
+Freedom From Religion Foundation, the ACLU of Georgia, Georgia Recorder, Capitol
+Beat, GPB News, WABE, The Atlanta Journal-Constitution, Chalkbeat, Education
+Week, K-12 Dive, the Georgia General Assembly bill pages, and school board
+meeting coverage. Run several distinct searches.
+
+Tips from Dr. Finley. Work every one of these. Each is a lead, often a social
+media post. Find the underlying development and a source a reader can open, and
+return it as a candidate with "tipUrl" set to the tip. If a tip cannot be traced
+to a checkable source, or is out of scope, name it in notes with the reason.
+${tipText}
+
+Already published on the site, do not return these or any restatement of them:
+${recent || '(nothing published yet)'}
+
+Return at most ${WATCH_SLOTS + 2 + tips.length} candidates. Rank newest first.
+
+Respond with one JSON object and nothing else, in a \`\`\`json fence:
+
+{
+  "items": [
+    {
+      "headline": "plain statement of who did or said what",
+      "sourceUrl": "https://the-page-you-read",
+      "sourceName": "publication or institution, whichever page you actually read",
+      "originalAnnouncementUrl": "the official record if you used a different source, otherwise null",
+      "originalAnnouncementName": "its name if the field above is set, otherwise null",
+      "category": "policy | event | discovery",
+      "topic": "science-education | ai-education",
+      "eventDate": "YYYY-MM-DD, the date of the action, statement, or report",
+      "location": "City or region, Georgia, or Statewide, Georgia, or National, or null",
+      "whyItFits": "one line on how this affects what Georgia students are taught about science",
+      "tipUrl": "the tip URL this came from, or null",
+      "watchFor": "a caveat to check, or null"
+    }
+  ],
+  "notes": "what you searched, and what happened to each tip"
+}
+
+Category: policy for an action or statement by an official, body, or agency,
+or a bill, rule, or policy; event for a dated hearing, vote, or meeting still to
+come; discovery for a study, survey, or audit with findings.`;
+
+  const tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 10 }];
+  const res = await callAnthropic({ system, userText, tools, maxTokens: 7000 });
+  const parsed = extractJson(res.text);
+  const items = (Array.isArray(parsed.items) ? parsed.items : []).map((c) => ({
+    ...c,
+    category: ['policy', 'event', 'discovery'].includes(c.category) ? c.category : 'policy',
+    pass: 'watch',
+    tipUrl: c.tipUrl && /^https?:\/\//.test(String(c.tipUrl)) ? String(c.tipUrl) : null,
   }));
   return { items, notes: parsed.notes || '', usage: res.usage };
 }
@@ -682,6 +846,17 @@ Never fall back to an aggregator, a content farm, an AI generated summary, a
 social media post, or a site you cannot identify. If nothing readable and
 reputable exists, set verified to false and stop.
 
+If this item reports a false or misleading claim about science, or an effort to
+remove or weaken established science, also fetch a page from a relevant
+scientific body or reputable science organization that states the evidence on
+that point, for example the National Academies, NCSE, AAAS, NASA, NOAA, the
+American Academy of Pediatrics, or a peer reviewed review article. Put it in
+"evidenceUrl" and "evidenceName", add one plain sentence to the body saying what
+the evidence shows, and list that sentence in "claims" with a verbatim quote from
+the evidence page and "from": "evidence". The rule against background from your
+own knowledge still applies: the evidence sentence must come from a page you
+fetched.
+
 Record in "source" whichever page you actually read and quoted, and name it in
 "sourceName". If that page is not the institution's own announcement and the
 institution does have one, put its URL in "originalAnnouncementUrl" so the item
@@ -700,12 +875,15 @@ Then respond with one JSON object and nothing else, in a \`\`\`json fence:
   "sourceName": "publication or institution, whichever page you actually read",
   "originalAnnouncementUrl": "the institution's own page if you used a different source, otherwise null",
   "originalAnnouncementName": "the institution's name if the field above is set, otherwise null",
+  "evidenceUrl": "the scientific evidence page you fetched, or null",
+  "evidenceName": "the organization behind that page, or null",
   "location": "City or region, Georgia, or null if the source does not say",
   "summary": "one to two plain language sentences for the list and home pages",
   "body": "one to three sentences of plain language explanation, no heading, no source link, the script adds the link",
   "claims": [
     { "claim": "a specific factual assertion made in the draft",
-      "quote": "a short verbatim quote from the fetched page that supports it" }
+      "quote": "a short verbatim quote from the fetched page that supports it",
+      "from": "source or evidence, which page the quote is from" }
   ],
   "unsupported": ["any claim in the candidate lead that the source did not support"],
   "missionSentence": "one optional sentence connecting this to science literacy in Georgia, or null"
@@ -719,7 +897,9 @@ Category meanings, applied strictly:
   affects learning or the education system is discovery.
 - policy: standards, law, or an official decision, including rules,
   certification and endorsement changes, budget actions, and official guidance
-  that affect STEM education in Georgia. An audit, survey, or study that
+  that affect STEM education in Georgia, and an action or public statement by an
+  official, body, or agency that affects what Georgia students are taught about
+  science. An audit, survey, or study that
   reports findings is discovery, even when a state agency produced it.
 - event: a dated happening. For an upcoming event, "date" is the date the page
   was published or last updated, so the item does not sit pinned at the top of
@@ -763,7 +943,7 @@ verbatim from the page you read.`;
     {
       type: 'web_fetch_20250910',
       name: 'web_fetch',
-      max_uses: 6,
+      max_uses: 8,
       max_content_tokens: 40000,
     },
     // Needed for the fallback: finding a readable account of the same story
@@ -842,6 +1022,22 @@ function validateDraft(d) {
     }
   }
 
+  // Optional. The scientific evidence page an accountability item cites.
+  let evidenceUrl = null;
+  let evidenceName = null;
+  const rawEvidence = String(d.evidenceUrl || '').trim();
+  if (rawEvidence && !/^(null|n\/a|none)$/i.test(rawEvidence)) {
+    try {
+      const u = new URL(rawEvidence);
+      if (u.protocol === 'https:' || u.protocol === 'http:') {
+        evidenceUrl = u.toString();
+        evidenceName = sanitizeText(d.evidenceName || '') || 'the scientific evidence';
+      }
+    } catch {
+      warnings.push('evidenceUrl was not a valid URL and was dropped');
+    }
+  }
+
   const allText = [title, summary, body, missionSentence || ''].join(' ');
   if (/[—–]/.test(allText)) errors.push('an em or en dash survived sanitising');
   if (/\bprove[dsn]?\b|\bproof\b/i.test(allText)) {
@@ -858,7 +1054,11 @@ function validateDraft(d) {
   const claims = Array.isArray(d.claims)
     ? d.claims
         .filter((c) => c && c.claim)
-        .map((c) => ({ claim: sanitizeText(c.claim), quote: sanitizeText(c.quote || '') }))
+        .map((c) => ({
+          claim: sanitizeText(c.claim),
+          quote: sanitizeText(c.quote || ''),
+          from: c.from === 'evidence' ? 'evidence' : 'source',
+        }))
     : [];
   if (claims.length === 0) warnings.push('the model listed no verifiable claims');
 
@@ -893,6 +1093,8 @@ function validateDraft(d) {
       sourceName,
       originalUrl,
       originalName,
+      evidenceUrl,
+      evidenceName,
       location,
       summary,
       body,
@@ -933,6 +1135,10 @@ function buildMarkdown(item) {
     lines.push('');
     lines.push('Original announcement: [' + item.originalName + '](' + item.originalUrl + ').');
   }
+  if (item.evidenceUrl) {
+    lines.push('');
+    lines.push('What the evidence shows: [' + item.evidenceName + '](' + item.evidenceUrl + ').');
+  }
   if (item.missionSentence) {
     lines.push('');
     lines.push(item.missionSentence);
@@ -972,7 +1178,7 @@ function buildPrBody(results, meta) {
     out.push('');
     out.push(
       'Category `' + it.category + '`  |  ' +
-        (it.topic === 'ai-education' ? 'AI in education' : 'Science education') +
+        (it.pass === 'watch' ? 'Anti-science watch' : it.topic === 'ai-education' ? 'AI in education' : 'Science education') +
         '  |  Date ' + it.date + (it.location ? '  |  ' + it.location : '')
     );
     out.push('');
@@ -984,6 +1190,14 @@ function buildPrBody(results, meta) {
           it.originalName + '](' + it.originalUrl + ')'
       );
     }
+    if (it.evidenceUrl) {
+      out.push('');
+      out.push('Evidence page: [' + it.evidenceName + '](' + it.evidenceUrl + ')');
+    }
+    if (it.tipUrl) {
+      out.push('');
+      out.push('From your tip: ' + it.tipUrl + '. Remove it from `tips.txt` once this is merged or closed.');
+    }
     out.push('');
     out.push('> ' + it.summary);
     out.push('');
@@ -994,7 +1208,7 @@ function buildPrBody(results, meta) {
     out.push('- [ ] `' + it.category + '` is the right category');
     it.claims.forEach((c) => {
       const quote = c.quote
-        ? '<br>Source says: "' + c.quote + '"'
+        ? '<br>' + (c.from === 'evidence' ? 'Evidence page says' : 'Source says') + ': "' + c.quote + '"'
         : '<br>No supporting quote was given, check this against the page yourself.';
       out.push('- [ ] ' + c.claim + quote);
     });
@@ -1052,6 +1266,12 @@ async function main() {
   await loadPending(published);
   log('Known items: ' + published.urls.size + ' source URLs, ' + published.slugs.size + ' published files.');
 
+  const tips = await loadTips(published);
+  log('Tips pending: ' + tips.length);
+  const watchRun = await curateWatch(published, tips);
+  log('Watch pass returned ' + watchRun.items.length + ' candidate(s).');
+  if (watchRun.notes) log('Watch notes: ' + watchRun.notes);
+
   const policyRun = await curatePolicy(published);
   log('Policy pass returned ' + policyRun.items.length + ' candidate(s).');
   if (policyRun.notes) log('Policy notes: ' + policyRun.notes);
@@ -1061,6 +1281,7 @@ async function main() {
   if (generalRun.notes) log('General notes: ' + generalRun.notes);
 
   const notes = [
+    watchRun.notes ? 'Watch pass: ' + watchRun.notes : '',
     policyRun.notes ? 'Policy pass: ' + policyRun.notes : '',
     generalRun.notes ? 'General pass: ' + generalRun.notes : '',
   ].filter(Boolean).join(' ');
@@ -1070,7 +1291,7 @@ async function main() {
   // MAX_ITEMS have been kept.
   const seenUrls = new Set();
   const candidates = [];
-  for (const c of [...policyRun.items, ...generalRun.items]) {
+  for (const c of [...watchRun.items, ...policyRun.items, ...generalRun.items]) {
     const key = c.sourceUrl ? normalizeUrl(c.sourceUrl) : '';
     if (key && seenUrls.has(key)) continue;
     if (key) seenUrls.add(key);
@@ -1090,7 +1311,7 @@ async function main() {
     // AI policy found by the policy pass fills a policy slot and does not count
     // against the AI cap, which exists to keep AI studies and programs from
     // crowding out science education.
-    if (c.topic === 'ai-education' && c.pass !== 'policy' && ++aiSeen > AI_MAX_ITEMS) {
+    if (c.topic === 'ai-education' && c.pass !== 'policy' && c.pass !== 'watch' && ++aiSeen > AI_MAX_ITEMS) {
       results.push({
         kept: false,
         headline: c.headline || c.sourceUrl || 'untitled',
@@ -1107,12 +1328,12 @@ async function main() {
   let generalTried = 0;
   for (const candidate of capped) {
     if (keptCount >= MAX_ITEMS) break;
-    if (candidate.pass !== 'policy' && ++generalTried > MAX_ITEMS) break;
+    if (!candidate.pass && ++generalTried > MAX_ITEMS) break;
     const headline = candidate.headline || candidate.sourceUrl || 'untitled';
     // Policy discards are shown in the pull request, so a policy item lost to
     // an unreadable agency site is visible to the reviewer and can be written
     // up by hand.
-    const isPolicy = candidate.pass === 'policy';
+    const isPolicy = candidate.pass === 'policy' || candidate.pass === 'watch';
 
     if (!candidate.sourceUrl) {
       results.push({ kept: false, headline, reason: 'no source URL returned' });
@@ -1144,6 +1365,8 @@ async function main() {
 
     const item = checked.item;
     item.topic = candidate.topic;
+    item.pass = candidate.pass || 'general';
+    item.tipUrl = candidate.tipUrl || null;
 
     // Two gates, both applied after the page was read. Neither is surfaced in
     // the pull request body: an item that fails here is not a candidate the
@@ -1155,7 +1378,7 @@ async function main() {
         silent: !isPolicy,
         headline,
         reason: 'could not be verified against a fetched source, discarded' +
-          (isPolicy ? '. Policy item, consider writing it up by hand from ' + candidate.sourceUrl : ''),
+          (isPolicy ? '. Policy or watch item, consider writing it up by hand from ' + candidate.sourceUrl : ''),
       });
       continue;
     }
@@ -1165,7 +1388,7 @@ async function main() {
         silent: !isPolicy,
         headline,
         reason: 'out of scope on reading the source, most likely a funding announcement' +
-          (isPolicy ? '. Policy item, check whether this judgement was right: ' + candidate.sourceUrl : ''),
+          (isPolicy ? '. Policy or watch item, check whether this judgement was right: ' + candidate.sourceUrl : ''),
       });
       continue;
     }
