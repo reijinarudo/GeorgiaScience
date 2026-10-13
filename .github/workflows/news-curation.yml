@@ -1,6 +1,7 @@
 # Weekly news curation for GeorgiaScience.org.
 #
-# This workflow searches for Georgia science education news, drafts schema exact
+# This workflow searches for Georgia science education news, STEM education policy,
+# and anti-science activity affecting Georgia (plus any links in tips.txt), drafts schema exact
 # Markdown files, verifies that the site still builds with them, and opens a
 # pull request for review. It never commits to main. Merging the pull request is
 # the human gate, and merging is what triggers the existing deploy workflow.
@@ -21,11 +22,11 @@ on:
       max_items:
         description: 'Maximum items to draft in this run'
         required: false
-        default: '3'
+        default: '4'
       lookback_days:
-        description: 'How many days back to search'
+        description: 'How many days back the general pass searches'
         required: false
-        default: '90'
+        default: '45'
       dry_run:
         description: 'Search and draft, but do not open a pull request'
         type: boolean
@@ -79,8 +80,8 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           NEWS_MODEL: claude-sonnet-5
-          NEWS_MAX_ITEMS: ${{ inputs.max_items || '3' }}
-          NEWS_LOOKBACK_DAYS: ${{ inputs.lookback_days || '90' }}
+          NEWS_MAX_ITEMS: ${{ inputs.max_items || '4' }}
+          NEWS_LOOKBACK_DAYS: ${{ inputs.lookback_days || '45' }}
           NEWS_PENDING_FILE: pending-items.txt
           NEWS_PR_BODY_FILE: pr-body.md
           # Mentioned at the top of the pull request body. A mention notifies
