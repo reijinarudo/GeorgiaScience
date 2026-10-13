@@ -1,4 +1,3 @@
-
 ---
 title: "Georgia measles cases reach 21 in 2026 after five unvaccinated or under-vaccinated Jasper County siblings test positive"
 date: 2026-09-30
