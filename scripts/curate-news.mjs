@@ -467,7 +467,9 @@ source themselves. Prefer the institution's own announcement page.
 Bias toward grades 8 to 12 relevance, but include clearly relevant items outside
 that band.
 
-RECENCY. Prefer what happened recently. When two items both clear the bar, the
+RECENCY. Prefer what happened recently. A new development in an ongoing story,
+dated inside the search window, is recent news and should not be dismissed as a
+restatement of the earlier coverage. When two items both clear the bar, the
 newer one ranks higher. A development from the last few weeks outranks a
 better-documented one from months ago.
 
@@ -753,6 +755,9 @@ ${tipText}
 Already published on the site or found earlier in this run, do not return these or any restatement of them:
 ${recent || '(nothing published yet)'}
 
+Ongoing stories count. A new development inside the window, such as a new case
+count, a new official action, a vote, a filing, or a new public statement,
+qualifies even when the story began earlier. Report the new development itself.
 Return one candidate per story. When a story has several developments, such as
 an outbreak count rising over several weeks, return only the most recent one.
 Return at most ${WATCH_SLOTS + 2 + tips.length} candidates. Rank newest first.
