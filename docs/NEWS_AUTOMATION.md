@@ -10,23 +10,37 @@ Every Monday morning, a GitHub Actions workflow:
 
 1. Reads every item already in `src/content/news/`, plus every item sitting in an
    open automation pull request, so the same story does not resurface.
-2. Calls the Anthropic API with server side web search to look for Georgia
-   science education and science literacy news from the last 45 days.
-3. For each candidate, makes a second call that fetches and reads the source,
+2. Reads `tips.txt`, the links Dr. Finley has dropped in as leads.
+3. Runs three search passes with the Anthropic API and server side web search,
+   in this order:
+   - **Watch pass.** Anti-science activity affecting Georgia science education
+     from the last 30 days, plus every pending tip. These become Science Watch
+     items. One slot is reserved for it.
+   - **Policy pass.** STEM education policy affecting Georgia from the last 120
+     days: State Board and Professional Standards Commission actions, laws,
+     budget actions, audits, and official guidance. One slot is reserved.
+   - **General pass.** Georgia science education and science literacy news from
+     the last 45 days.
+   Each later pass sees what the earlier passes found, so one story is not
+   drafted twice. Every pass ranks newer items first. A reserved slot that its
+   pass cannot fill goes to the others.
+4. For each candidate, makes a second call that fetches and reads the source,
    then drafts the item and reports which specific claims that page supports,
    with verbatim quotes. If the institution's own page cannot be read, the run
    falls back to a reputable outlet covering the same story and links the
    institution's announcement in the body as well.
-4. Validates every draft against the collection schema in
-   `src/content.config.ts`. An item that fails is dropped, never repaired by
+5. Validates every draft against the collection schema in
+   `src/content/config.ts`. An item that fails is dropped, never repaired by
    guessing.
-5. Discards, without drafting a file, anything it could not verify against a
+6. Discards, without drafting a file, anything it could not verify against a
    page it actually read, and anything that turns out on reading to be a
-   funding or award announcement rather than news. Both discards are logged in
-   the run but are not shown in the pull request.
-6. Runs `npm run build` with the drafts in place. If the build fails, no pull
+   research funding or award announcement rather than news. Discards from the
+   watch and policy passes are listed under "Not included" in the pull request,
+   with the link, so they can be written up by hand. Discards from the general
+   pass appear only in the run log.
+7. Runs `npm run build` with the drafts in place. If the build fails, no pull
    request is opened and the run fails loudly.
-7. Opens a pull request containing the drafted `.md` files and a review
+8. Opens a pull request containing the drafted `.md` files and a review
    checklist.
 
 It never commits to `main`. Merging the pull request is the human gate, and the
@@ -42,6 +56,7 @@ run still appears in the Actions tab with a summary of what was searched.
 | `.github/workflows/news-curation.yml` | The scheduled job. |
 | `.github/workflows/build-check.yml` | Runs the build on every pull request, so edits made in the web editor are checked too. |
 | `scripts/curate-news.mjs` | The curation and drafting logic, and the schema validation. No npm dependencies. |
+| `tips.txt` | Links to check, one per line, read by the watch pass every run. |
 | `docs/NEWS_AUTOMATION.md` | This file. |
 
 ## Setup, in order
@@ -51,13 +66,10 @@ run still appears in the Actions tab with a summary of what was searched.
 The workflow sends no email of its own. It opens a pull request and lets
 GitHub's own notifications do the work, so there is nothing custom to maintain.
 
-Two things in the workflow make that reliable without depending on your
-repository Watch setting:
-
-- The pull request body opens with `@reijinarudo`. A mention notifies you under
-  GitHub's default "Participating and @mentions" setting.
-- The pull request is assigned to you. Being assigned also notifies you under
-  the default setting.
+The pull request body opens with `@reijinarudo`. A mention notifies you under
+GitHub's default "Participating and @mentions" setting, so the notification does
+not depend on your repository Watch setting. The pull request is not also
+assigned, which keeps it to one email per run.
 
 So the only thing to confirm is that GitHub has a working email address for you
 and that email is switched on at all:
@@ -72,7 +84,7 @@ and that email is switched on at all:
 
 Optional, as a second path: on the repository page, click **Watch**, then
 **Custom**, tick **Pull requests**, and Apply. This is belt and braces. The
-mention and the assignment already cover you.
+mention already covers you.
 
 ### 2. Allow Actions to open pull requests
 
@@ -95,7 +107,7 @@ Set a monthly spend limit on the key in the console as a backstop.
 
 ### 4. Add the files
 
-Add the four files listed above to the repository. Nothing else in the repository
+Add the files listed above to the repository. Nothing else in the repository
 changes.
 
 ### 5. First run, as a rehearsal
@@ -137,10 +149,46 @@ dropped because a site blocked the fetch. The run log records what was
 discarded and why, so you can look there if a week seems unusually quiet and
 write the item up by hand.
 
+## Science Watch
+
+Science Watch is the site's category for reporting anti-science activity
+affecting Georgia science education and correcting the record. It covers efforts
+to stop or weaken the teaching of evolution or present creationism as science,
+climate science denial, religious or ideological instruction presented as
+science, health and vaccine misinformation reaching students, censorship of
+science materials, and interference in standards, textbooks, or assessments. It
+covers the state, districts, schools, teachers, and officials in Georgia, and
+national or other-state developments likely to reach Georgia classrooms.
+
+Science Watch items carry the category `watch` and a dark red tag on the site.
+When an item reports a false or misleading claim, the drafting step fetches a
+page from a scientific body that states the evidence, adds one sentence on what
+the evidence shows, and links it as "What the evidence shows". The quote behind
+that sentence is marked "Evidence page says" in the pull request checklist.
+
+The standard for these items: name who acted and what they did or said, cite the
+record, say plainly when a claim is false, quote people in their own words, and
+describe their reasons only as the record shows them.
+
+A new development in an ongoing story, such as a new case count, vote, filing,
+or statement, counts as news when it falls inside the window.
+
+## Tips
+
+`tips.txt` sits at the top of the repository. Paste one link per line, from
+LinkedIn or anywhere, with an optional short note after the link. Lines starting
+with `#` are ignored. Each run, the watch pass traces every tip to a source a
+reader can open. A tip is a lead and is never the source of an item. The run
+notes say what happened to each tip.
+
+When a pull request shows an item "From your tip", remove that line from
+`tips.txt` once the pull request is merged or closed. The repository is public,
+so anything in `tips.txt` is publicly visible.
+
 ## What counts as news here
 
-Research funding is out of scope. A grant, award, or contract to a Georgia
-institution is not a news item for this site, however large the figure. Money
+Research funding awards are out of scope. A grant, award, or contract to a
+Georgia institution is not a news item for this site, however large the figure. Money
 changing hands is not a finding and it is not education. A funded project
 becomes reportable when there is a result to explain.
 
@@ -151,6 +199,13 @@ scarcer education stories in every run.
 
 Student scholarships are a different matter and remain in scope. The distinction
 is who receives the money: students, yes; researchers and institutions, no.
+
+Public budget decisions, appropriations, funding cuts, and grant terminations
+that change what Georgia classrooms or teacher programs can do are policy, and
+are in scope.
+
+STEM policy is in scope beyond science alone: mathematics, computer science,
+engineering and technology, AI in education, and the STEM teacher workforce.
 
 The rule is enforced twice, once in the curation search and again after the
 source page has been read, since a headline does not always reveal that a story
@@ -189,12 +244,17 @@ literacy initiative and Georgia Tech's CEISMC summer programs for having no date
 announcement inside the window, which is a newsroom rule applied to a site that
 is not a newsroom.
 
-Two things address that. The window defaults to 90 days rather than 45. And a
+Two things address that. Each pass has its own window (30, 120, and 45 days).
+And a
 `resource` item, a program, tool, competition, curriculum, or scholarship someone
 can actually use, qualifies on being current and useful rather than newly
 announced. Its date still has to come from the source: a program or application
 start, a stated deadline, or the page's own publication date. A page with no date
 anywhere is dropped rather than given an invented one.
+
+Search results vary from run to run, so a story found one week can be missed
+the next. If you know of a story the run missed, add its link to `tips.txt` or
+ask for it to be written up by hand.
 
 An occasional empty week is correct behaviour and better than filler. Three empty
 weeks in a row means the settings are wrong, not that Georgia went quiet.
@@ -245,9 +305,9 @@ what it can read. You are not.
 
 ## Cost
 
-Roughly $0.20 to $0.50 per run at current pricing, so on the order of $1 to $2
-per month at a weekly cadence. Web search is billed per search, currently $10 per
-thousand, and the run makes up to ten. The rest is token cost for the search
+Roughly $0.40 to $0.90 per run at current pricing with three search passes, so
+on the order of $2 to $4 per month at a weekly cadence. Web search is billed per
+search, currently $10 per thousand, and the three passes make up to 30 together. The rest is token cost for the search
 results and fetched pages. Confirm the actual figure on the Anthropic Console
 after a few runs rather than trusting this estimate.
 
@@ -256,8 +316,11 @@ after a few runs rather than trusting this estimate.
 | What | Where |
 | --- | --- |
 | Cadence | The `cron` line in `news-curation.yml`. It is UTC. `0 11 * * 1` is Monday 07:00 in Georgia during daylight saving time and 06:00 during standard time. |
-| Maximum items per run | `NEWS_MAX_ITEMS` in `news-curation.yml`, currently 3. |
-| How far back to search | `NEWS_LOOKBACK_DAYS`, currently 90. |
+| Maximum items per run | `NEWS_MAX_ITEMS` in `news-curation.yml`, currently 4. |
+| General pass window | `NEWS_LOOKBACK_DAYS` in `news-curation.yml`, currently 45. |
+| Watch pass window and slots | `NEWS_WATCH_LOOKBACK_DAYS` (30) and `NEWS_WATCH_SLOTS` (1), defaults in the script. |
+| Policy pass window and slots | `NEWS_POLICY_LOOKBACK_DAYS` (120) and `NEWS_POLICY_SLOTS` (1), defaults in the script. |
+| Tips file | `NEWS_TIPS_FILE`, default `tips.txt`. |
 | AI in education items per run | `NEWS_AI_MAX_ITEMS`, default 1 in the script. Set 0 to switch the topic off, 2 at most. |
 | Model | `NEWS_MODEL`, currently `claude-sonnet-5`. |
 | Search targets, scope rules, house style | The `SCOPE_RULES`, `STYLE_RULES`, and prompt text in `scripts/curate-news.mjs`. |
@@ -275,7 +338,8 @@ or more. Nothing here depends on exact timing.
 | Run succeeds, no pull request | Nothing cleared the bar. Read the run Summary to see what was searched and dropped. This is normal on quiet weeks. |
 | A story you know about never appears | It may have been discarded as unverifiable or as a funding announcement. Open the run in the Actions tab and read the log of the "Curate and draft" step, which lists every dropped item and the reason. |
 | Pull request opens but no email arrives | Check the default notification email at `github.com/settings/notifications`. The pull request mentions and assigns you, so a missing email is an address or delivery problem, not a Watch setting. |
-| The same story appears twice | The second appearance used a different URL and a different headline. Add the URL to the item on the site, or close the duplicate. |
+| The same story appears twice | The second appearance used a different URL and a different headline. Delete the duplicate file from the branch before merging. |
+| A news item does not appear on the site after a manual commit | Check that `---` is the very first line of the file. A blank line above it breaks the frontmatter and fails the build. |
 
 ## What this deliberately does not do
 
