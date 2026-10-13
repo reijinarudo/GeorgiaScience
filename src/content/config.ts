@@ -9,7 +9,7 @@ const news = defineCollection({
     title: z.string(),
     date: z.date(),
     // Controlled vocabulary. Anything outside this set fails the build.
-    category: z.enum(['scholarship', 'discovery', 'policy', 'event', 'resource']),
+    category: z.enum(['scholarship', 'discovery', 'policy', 'event', 'resource', 'watch']),
     source: z.string().url(),
     sourceName: z.string(),
     location: z.string().optional(),
