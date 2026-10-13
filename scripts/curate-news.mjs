@@ -59,7 +59,7 @@ const API_URL = 'https://api.anthropic.com/v1/messages';
 
 // Controlled vocabulary. This must stay identical to the enum in
 // src/content.config.ts. Anything outside it fails the Astro build.
-const CATEGORIES = ['scholarship', 'discovery', 'policy', 'event', 'resource'];
+const CATEGORIES = ['scholarship', 'discovery', 'policy', 'event', 'resource', 'watch'];
 
 const MODEL = process.env.NEWS_MODEL || 'claude-sonnet-5';
 const MAX_ITEMS = clampInt(process.env.NEWS_MAX_ITEMS, 3, 1, 5);
@@ -554,7 +554,7 @@ Respond with one JSON object and nothing else, in a \`\`\`json fence:
       "sourceName": "publication or institution, whichever page you actually read",
   "originalAnnouncementUrl": "the institution's own page if you used a different source, otherwise null",
   "originalAnnouncementName": "the institution's name if the field above is set, otherwise null",
-      "category": "scholarship | discovery | policy | event | resource",
+      "category": "scholarship | discovery | policy | event | resource | watch",
       "topic": "science-education | ai-education",
       "eventDate": "YYYY-MM-DD, the date of the event or announcement",
       "location": "City or region, Georgia, or null if genuinely unknown",
@@ -565,7 +565,8 @@ Respond with one JSON object and nothing else, in a \`\`\`json fence:
   "notes": "one or two sentences on what you searched and why anything was dropped"
 }
 
-The category must be exactly one of the five listed values. If an item does not
+The category must be exactly one of the listed values. Use watch for
+anti-science activity affecting Georgia science education. If an item does not
 fit one of them, drop the item rather than approximating. A law or official
 policy on AI is policy, a study of AI's effects is discovery, and an AI literacy
 program is resource. The topic must be exactly science-education or
@@ -761,7 +762,7 @@ Respond with one JSON object and nothing else, in a \`\`\`json fence:
       "sourceName": "publication or institution, whichever page you actually read",
       "originalAnnouncementUrl": "the official record if you used a different source, otherwise null",
       "originalAnnouncementName": "its name if the field above is set, otherwise null",
-      "category": "policy | event | discovery",
+      "category": "watch",
       "topic": "science-education | ai-education",
       "eventDate": "YYYY-MM-DD, the date of the action, statement, or report",
       "location": "City or region, Georgia, or Statewide, Georgia, or National, or null",
@@ -773,16 +774,15 @@ Respond with one JSON object and nothing else, in a \`\`\`json fence:
   "notes": "what you searched, and what happened to each tip"
 }
 
-Category: policy for an action or statement by an official, body, or agency,
-or a bill, rule, or policy; event for a dated hearing, vote, or meeting still to
-come; discovery for a study, survey, or audit with findings.`;
+Category: always "watch". Science Watch is the site's category for reporting
+anti-science activity and correcting the record.`;
 
   const tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 10 }];
   const res = await callAnthropic({ system, userText, tools, maxTokens: 7000 });
   const parsed = extractJson(res.text);
   const items = (Array.isArray(parsed.items) ? parsed.items : []).map((c) => ({
     ...c,
-    category: ['policy', 'event', 'discovery'].includes(c.category) ? c.category : 'policy',
+    category: 'watch',
     pass: 'watch',
     tipUrl: c.tipUrl && /^https?:\/\//.test(String(c.tipUrl)) ? String(c.tipUrl) : null,
   }));
@@ -870,7 +870,7 @@ Then respond with one JSON object and nothing else, in a \`\`\`json fence:
   "fetchNote": "one sentence on whether the page was fetched and what it is",
   "title": "Specific headline: what happened and who it affects",
   "date": "YYYY-MM-DD, the date of the event or announcement, not today",
-  "category": "scholarship | discovery | policy | event | resource",
+  "category": "scholarship | discovery | policy | event | resource | watch",
   "source": "the primary source URL you actually read",
   "sourceName": "publication or institution, whichever page you actually read",
   "originalAnnouncementUrl": "the institution's own page if you used a different source, otherwise null",
@@ -907,7 +907,12 @@ Category meanings, applied strictly:
   with a claim and quote for it like any other fact.
 - resource: a program, tool, or material that a student, teacher, or member of
   the public can actually use.
-Use exactly one of the five values.
+- watch: Science Watch, anti-science activity affecting Georgia science
+  education and the correction of the record. Use it for any item reporting an
+  effort to remove, weaken, or misrepresent established science, whatever its
+  form: a bill, a board vote, an official's statement, a classroom incident, a
+  textbook change. Keep watch when the suggested category is watch.
+Use exactly one of the six values.
 
 If the item reports a study, of AI or anything else:
 - State what was measured and who was studied, using only what the page says.
