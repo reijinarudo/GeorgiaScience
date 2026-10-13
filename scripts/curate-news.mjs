@@ -500,6 +500,7 @@ async function curate(published) {
   const recent = published.list
     .slice(0, 40)
     .map((i) => '- ' + i.date + ' ' + i.title + ' (' + i.source + ')')
+    .concat((published.claimed || []).map((h) => '- (found earlier in this run) ' + h))
     .join('\n');
 
   const system = `You are the curation pass of the news workflow for
@@ -538,7 +539,7 @@ education system, and AI literacy programs for Georgia students or teachers.
 Return at most ${AI_MAX_ITEMS} AI in education candidate(s), and only if it
 clears the same bar as everything else.
 
-Already published on the site, do not return these or any restatement of them:
+Already published on the site or found earlier in this run, do not return these or any restatement of them:
 ${recent || '(nothing published yet)'}
 
 Return at most ${MAX_ITEMS} candidates, fewer if fewer clear the bar, and zero if
@@ -593,6 +594,7 @@ async function curatePolicy(published) {
   const recent = published.list
     .slice(0, 40)
     .map((i) => '- ' + i.date + ' ' + i.title + ' (' + i.source + ')')
+    .concat((published.claimed || []).map((h) => '- (found earlier in this run) ' + h))
     .join('\n');
 
   const system = `You are the policy curation pass of the news workflow for
@@ -637,7 +639,7 @@ when the agency's own site cannot: PAGE legislative meeting reports
 Atlanta Journal-Constitution education coverage, and the Georgia Budget and
 Policy Institute.
 
-Already published on the site, do not return these or any restatement of them:
+Already published on the site or found earlier in this run, do not return these or any restatement of them:
 ${recent || '(nothing published yet)'}
 
 Return at most ${POLICY_SLOTS + 1} candidates, fewer if fewer clear the bar, and
@@ -696,6 +698,7 @@ async function curateWatch(published, tips) {
   const recent = published.list
     .slice(0, 40)
     .map((i) => '- ' + i.date + ' ' + i.title + ' (' + i.source + ')')
+    .concat((published.claimed || []).map((h) => '- (found earlier in this run) ' + h))
     .join('\n');
   const tipText = tips.length
     ? tips.map((t, i) => (i + 1) + '. ' + t.url + (t.note ? ' (note: ' + t.note + ')' : '')).join('\n')
@@ -747,9 +750,11 @@ return it as a candidate with "tipUrl" set to the tip. If a tip cannot be traced
 to a checkable source, or is out of scope, name it in notes with the reason.
 ${tipText}
 
-Already published on the site, do not return these or any restatement of them:
+Already published on the site or found earlier in this run, do not return these or any restatement of them:
 ${recent || '(nothing published yet)'}
 
+Return one candidate per story. When a story has several developments, such as
+an outbreak count rising over several weeks, return only the most recent one.
 Return at most ${WATCH_SLOTS + 2 + tips.length} candidates. Rank newest first.
 
 Respond with one JSON object and nothing else, in a \`\`\`json fence:
@@ -1277,10 +1282,15 @@ async function main() {
   log('Watch pass returned ' + watchRun.items.length + ' candidate(s).');
   if (watchRun.notes) log('Watch notes: ' + watchRun.notes);
 
+  // Later passes see what earlier passes found, so one story is not drafted
+  // two or three times in the same run under different headlines.
+  published.claimed = watchRun.items.map((c) => c.headline).filter(Boolean);
+
   const policyRun = await curatePolicy(published);
   log('Policy pass returned ' + policyRun.items.length + ' candidate(s).');
   if (policyRun.notes) log('Policy notes: ' + policyRun.notes);
 
+  published.claimed = published.claimed.concat(policyRun.items.map((c) => c.headline).filter(Boolean));
   const generalRun = await curate(published);
   log('General pass returned ' + generalRun.items.length + ' candidate(s).');
   if (generalRun.notes) log('General notes: ' + generalRun.notes);
