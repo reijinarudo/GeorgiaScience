@@ -1,0 +1,5 @@
+# Tips for the GeorgiaScience.org news run.
+# Paste one link per line, from LinkedIn or anywhere. A short note after the link is optional.
+# Each Monday run traces every tip to a source a reader can check.
+# Remove a tip once its pull request is merged or closed.
+# This repository is public, so anything here is publicly visible.
