@@ -12,9 +12,10 @@ const categoryLabel = {
   policy: 'Policy',
   event: 'Event',
   resource: 'Resource',
+  watch: 'Science Watch',
 };
 
-const filters = ['all', 'scholarship', 'discovery', 'policy', 'event', 'resource'];
+const filters = ['all', 'watch', 'scholarship', 'discovery', 'policy', 'event', 'resource'];
 const filterLabel = { all: 'All', ...categoryLabel };
 
 const dateFmt = (d) =>
@@ -23,14 +24,16 @@ const dateFmt = (d) =>
 
 <BaseLayout
   title="News | GeorgiaScience.org"
-  description="Local science news across Georgia: scholarships, discoveries, policy, and events affecting science education."
+  description="Local science news across Georgia: scholarships, discoveries, policy, events, and Science Watch reports on anti-science affecting science education."
 >
   <section class="wrap page-head">
     <p class="eyebrow">Local science news</p>
     <h1 class="page-title">Science news across Georgia</h1>
     <p class="page-intro">
       Scholarships, discoveries, policy, and events that shape science education and
-      literacy in Georgia. Each item is reported plainly and linked to a source you can check.
+      literacy in Georgia, plus Science Watch reports on efforts to weaken or distort the
+      science Georgia students are taught. Each item is reported plainly and linked to a
+      source you can check.
     </p>
   </section>
 
@@ -183,6 +186,7 @@ const dateFmt = (d) =>
     .tag-event { background: #fbe0d6; color: #8a3b1f; }
     .tag-scholarship { background: var(--accent-soft); color: var(--accent-ink); }
     .tag-resource { background: #e3eaee; color: #38505c; }
+    .tag-watch { background: #7a1626; color: #ffffff; }
 
     .news-title { grid-area: title; font-family: var(--font-display); font-weight: 600; font-size: var(--step-1); line-height: 1.25; }
     .news-meta { grid-area: meta; font-size: var(--step--1); color: var(--ink-soft); display: flex; gap: 0.75rem; flex-wrap: wrap; }
