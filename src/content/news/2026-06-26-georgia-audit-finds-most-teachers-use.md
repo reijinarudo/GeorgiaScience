@@ -1,7 +1,7 @@
 ---
 title: "Georgia audit finds most teachers use generative AI, but concerns rise with student use"
 date: 2026-06-26
-category: policy
+category: discovery
 source: "https://www.audits.ga.gov/ReportSearch/download/34020"
 sourceName: "Georgia Department of Audits and Accounts"
 location: "Atlanta, Georgia"
