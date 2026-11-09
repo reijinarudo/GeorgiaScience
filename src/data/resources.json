@@ -87,6 +87,7 @@
           "url": "https://skeptoid.com/teachers",
           "audience": "Educators",
           "initials": "SK",
+          "logo": "/logos/skeptoid.png",
           "description": "A free tool from Skeptoid, a weekly science podcast published since 2006 that examines popular misinformation and urban legends, including alternative medicine claims, conspiracy theories, and consumer frauds. A teacher builds a set of episodes and shares it with a class through one link. Shared episodes are ad-free, and students need no account.",
           "rationale": "Each episode takes one popular claim and checks it against published sources, so a class can follow a verification from the claim to the reference list."
         }
