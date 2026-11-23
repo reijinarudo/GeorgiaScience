@@ -4,11 +4,20 @@ import '../styles/global.css';
 export interface Props {
   title?: string;
   description?: string;
+  // Site path of the image shown in link previews. News items pass their
+  // topic illustration; every other page uses the site logo.
+  image?: string;
 }
 const {
   title = 'GeorgiaScience.org',
   description = 'Advancing science education and scientific literacy across Georgia.',
+  image = '/galogonew.png',
 } = Astro.props;
+// Link previews need absolute URLs.
+const site = 'https://georgiascience.org';
+const imageUrl = new URL(image, site).href;
+const pageUrl = new URL(Astro.url.pathname, site).href;
+const isArticle = Astro.url.pathname.startsWith('/news/') && Astro.url.pathname !== '/news/';
 const nav = [
   { href: '/', label: 'Home' },
   { href: '/about', label: 'About' },
@@ -24,6 +33,17 @@ const nav = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={pageUrl} />
+    <meta property="og:site_name" content="GeorgiaScience.org" />
+    <meta property="og:type" content={isArticle ? 'article' : 'website'} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={pageUrl} />
+    <meta property="og:image" content={imageUrl} />
+    <meta name="twitter:card" content={image === '/galogonew.png' ? 'summary' : 'summary_large_image'} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
