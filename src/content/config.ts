@@ -14,6 +14,11 @@ const news = defineCollection({
     sourceName: z.string(),
     location: z.string().optional(),
     summary: z.string(),
+    // Optional topic illustration for link previews (Facebook, LinkedIn).
+    // A site path starting with /news-images/, e.g.
+    // /news-images/2026-11-19-georgias-measles-cases-reach-28-for.jpg
+    // Items without it fall back to the site logo.
+    image: z.string().startsWith('/news-images/').optional(),
   }),
 });
 
